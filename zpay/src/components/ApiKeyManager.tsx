@@ -53,22 +53,17 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
   
   const fetchApiKeys = api.auth.getApiKeys.useQuery(undefined, {
     enabled: !!session?.user,
-    onSuccess: (data) => {
-      setApiKeys(data);
-      if (data.length > 0 && !activeKeyId) {
-        setActiveKeyId(data[0].id);
-        setApiKey(data[0].key);
-      }
-    }
   });
 
   useEffect(() => {
-    // If we have API keys and no active key is selected, use the first one
-    if (apiKeys.length > 0 && !activeKeyId) {
-      setActiveKeyId(apiKeys[0]!.id);
-      setApiKey(apiKeys[0]!.key);
+    if (fetchApiKeys.data) {
+      setApiKeys(fetchApiKeys.data);
+      if (fetchApiKeys.data.length > 0 && !activeKeyId) {
+        setActiveKeyId(fetchApiKeys.data[0]!.id);
+        setApiKey(fetchApiKeys.data[0]!.key);
+      }
     }
-  }, [apiKeys, activeKeyId]);
+  }, [fetchApiKeys.data, activeKeyId]);
 
   // Copy API key to clipboard
   const copyApiKey = () => {
