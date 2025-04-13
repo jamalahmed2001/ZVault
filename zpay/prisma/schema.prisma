@@ -72,6 +72,8 @@ model User {
     posts         Post[]
     apiKeys       ApiKey[]
     webhookConfig WebhookConfig?
+    resetToken       String?   @db.Text
+    resetTokenExpiry DateTime?
 }
 
 model VerificationToken {

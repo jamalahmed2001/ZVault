@@ -121,7 +121,10 @@ export default function Auth() {
         <meta name="description" content="Sign in or create an account to use ZPay secure payment processing" />
       </Head>
 
-      <main className="min-h-screen bg-blue-50 flex flex-col items-center justify-center p-4">
+      <main className="min-h-screen flex flex-col items-center justify-center p-4" style={{ 
+        backgroundColor: "var(--color-background-alt)", 
+        color: "var(--color-foreground-dark)" 
+      }}>
         <motion.div 
           className="w-full max-w-md"
           initial="initial"
@@ -134,13 +137,16 @@ export default function Auth() {
           >
             <Link href="/" className="inline-block">
               <div className="mb-6 flex justify-center">
-                <div className="h-12 w-12 rounded-full bg-blue-900 text-amber-300 flex items-center justify-center text-2xl font-bold">Z</div>
+                <div className="h-12 w-12 rounded-full flex items-center justify-center text-2xl font-bold" style={{ 
+                  backgroundColor: "var(--color-primary)", 
+                  color: "var(--color-accent)" 
+                }}>Z</div>
               </div>
             </Link>
-            <h1 className="text-3xl font-bold text-blue-800 mb-2">
+            <h1 className="text-3xl font-bold mb-2" style={{ color: "var(--color-primary)" }}>
               {mode === "signin" ? "Welcome Back" : "Create Your Account"}
             </h1>
-            <p className="text-neutral-600">
+            <p style={{ color: "var(--color-foreground-dark-alt)" }}>
               {mode === "signin" 
                 ? "Sign in to access your ZPay dashboard" 
                 : "Join ZPay and start accepting private payments"}
@@ -148,18 +154,27 @@ export default function Auth() {
           </motion.div>
 
           <motion.div 
-            className="bg-white shadow-xl rounded-xl border border-blue-100 overflow-hidden"
+            className="shadow-xl rounded-xl overflow-hidden"
+            style={{ 
+              backgroundColor: "var(--color-surface-light)", 
+              borderColor: "var(--color-border-light)",
+              borderWidth: "1px" 
+            }}
             variants={fadeInUp}
           >
             {/* Tab Navigation */}
-            <div className="flex border-b border-blue-100">
+            <div className="flex" style={{ borderBottom: "1px solid var(--color-border-light)" }}>
               <button 
                 onClick={() => setMode("signin")}
                 className={`w-1/2 py-4 text-center font-medium transition-colors ${
                   mode === "signin" 
-                    ? "text-blue-800 border-b-2 border-amber-300" 
-                    : "text-neutral-500 hover:text-blue-700"
+                    ? "border-b-2" 
+                    : "hover:text-[var(--color-primary)]"
                 }`}
+                style={{ 
+                  color: mode === "signin" ? "var(--color-primary)" : "var(--color-foreground-dark-alt)",
+                  borderColor: mode === "signin" ? "var(--color-accent)" : "transparent"
+                }}
               >
                 Sign In
               </button>
@@ -167,9 +182,13 @@ export default function Auth() {
                 onClick={() => setMode("register")}
                 className={`w-1/2 py-4 text-center font-medium transition-colors ${
                   mode === "register" 
-                    ? "text-blue-800 border-b-2 border-amber-300" 
-                    : "text-neutral-500 hover:text-blue-700"
+                    ? "border-b-2" 
+                    : "hover:text-[var(--color-primary)]"
                 }`}
+                style={{ 
+                  color: mode === "register" ? "var(--color-primary)" : "var(--color-foreground-dark-alt)",
+                  borderColor: mode === "register" ? "var(--color-accent)" : "transparent"
+                }}
               >
                 Register
               </button>
@@ -187,19 +206,26 @@ export default function Auth() {
                 /* Sign In Form */
                 <form onSubmit={handleSignIn}>
                   <div className="mb-6">
-                    <label htmlFor="email" className="block text-neutral-700 font-medium mb-2">
+                    <label htmlFor="email" className="block font-medium mb-2" style={{ color: "var(--color-foreground-dark)" }}>
                       Email
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <EnvelopeIcon className="h-5 w-5 text-neutral-400" />
+                        <EnvelopeIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                       </div>
                       <input
                         id="email"
                         type="email"
                         value={signInCredentials.email}
                         onChange={(e) => setSignInCredentials({...signInCredentials, email: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ 
+                          borderColor: "var(--color-border-light)", 
+                          borderWidth: "1px",
+                          backgroundColor: "var(--color-surface-light)",
+                          color: "var(--color-foreground-dark)",
+                          "--tw-ring-color": "var(--color-accent)" 
+                        } as React.CSSProperties}
                         placeholder="you@example.com"
                         required
                       />
@@ -208,30 +234,38 @@ export default function Auth() {
 
                   <div className="mb-6">
                     <div className="flex justify-between items-center mb-2">
-                      <label htmlFor="password" className="block text-neutral-700 font-medium">
+                      <label htmlFor="password" className="block font-medium" style={{ color: "var(--color-foreground-dark)" }}>
                         Password
                       </label>
-                      <Link href="/forgot-password" className="text-sm text-amber-600 hover:text-amber-700">
+                      <Link href="/auth/forgot-password" className="text-sm hover:underline" style={{ color: "var(--color-accent)" }}>
                         Forgot password?
                       </Link>
                     </div>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <LockClosedIcon className="h-5 w-5 text-neutral-400" />
+                        <LockClosedIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                       </div>
                       <input
                         id="password"
                         type={showPassword ? "text" : "password"}
                         value={signInCredentials.password}
                         onChange={(e) => setSignInCredentials({...signInCredentials, password: e.target.value})}
-                        className="w-full pl-10 pr-12 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full pl-10 pr-12 py-3 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ 
+                          borderColor: "var(--color-border-light)", 
+                          borderWidth: "1px",
+                          backgroundColor: "var(--color-surface-light)",
+                          color: "var(--color-foreground-dark)",
+                          "--tw-ring-color": "var(--color-accent)" 
+                        } as React.CSSProperties}
                         placeholder="••••••••"
                         required
                       />
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-500 hover:text-blue-700"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[var(--color-primary)]"
+                        style={{ color: "var(--color-foreground-dark-alt)" }}
                       >
                         {showPassword ? (
                           <EyeSlashIcon className="h-5 w-5" />
@@ -245,21 +279,32 @@ export default function Auth() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full bg-blue-700 text-white py-3 rounded-lg font-medium hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-800 focus:ring-offset-2 disabled:opacity-50"
+                    className="w-full py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                    style={{ 
+                      backgroundColor: "var(--color-primary)",
+                      color: "var(--color-primary-foreground)",
+                      "--tw-ring-color": "var(--color-primary)"
+                    } as React.CSSProperties}
                   >
                     {isLoading ? "Signing In..." : "Sign In"}
                   </button>
                   
                   <div className="mt-6 flex items-center">
-                    <div className="flex-grow border-t border-neutral-200"></div>
-                    <span className="mx-4 text-sm text-neutral-500">OR</span>
-                    <div className="flex-grow border-t border-neutral-200"></div>
+                    <div className="flex-grow border-t" style={{ borderColor: "var(--color-border-light)" }}></div>
+                    <span className="mx-4 text-sm" style={{ color: "var(--color-foreground-dark-alt)" }}>OR</span>
+                    <div className="flex-grow border-t" style={{ borderColor: "var(--color-border-light)" }}></div>
                   </div>
                   
                   <button
                     type="button"
                     onClick={() => signIn("google", { callbackUrl: redirectUrl })}
-                    className="w-full mt-6 bg-white border border-neutral-300 text-neutral-700 py-3 rounded-lg font-medium hover:bg-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 flex items-center justify-center"
+                    className="w-full mt-6 border py-3 rounded-lg font-medium hover:bg-[rgba(10,25,48,0.05)] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: "var(--color-surface-light)",
+                      borderColor: "var(--color-border-light)", 
+                      color: "var(--color-foreground-dark)",
+                      "--tw-ring-color": "var(--color-foreground-dark-alt)"
+                    } as React.CSSProperties}
                   >
                     <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                       <path
@@ -275,19 +320,26 @@ export default function Auth() {
                 <form onSubmit={handleRegister}>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <div>
-                      <label htmlFor="firstName" className="block text-neutral-700 font-medium mb-2">
+                      <label htmlFor="firstName" className="block font-medium mb-2" style={{ color: "var(--color-foreground-dark)" }}>
                         First Name
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UserIcon className="h-5 w-5 text-neutral-400" />
+                          <UserIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                         </div>
                         <input
                           id="firstName"
                           type="text"
                           value={registrationData.firstName}
                           onChange={(e) => setRegistrationData({...registrationData, firstName: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                          style={{ 
+                            borderColor: "var(--color-border-light)", 
+                            borderWidth: "1px",
+                            backgroundColor: "var(--color-surface-light)",
+                            color: "var(--color-foreground-dark)",
+                            "--tw-ring-color": "var(--color-accent)" 
+                          } as React.CSSProperties}
                           placeholder="John"
                           required
                         />
@@ -295,19 +347,26 @@ export default function Auth() {
                     </div>
                     
                     <div>
-                      <label htmlFor="lastName" className="block text-neutral-700 font-medium mb-2">
+                      <label htmlFor="lastName" className="block font-medium mb-2" style={{ color: "var(--color-foreground-dark)" }}>
                         Last Name
                       </label>
                       <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                          <UserIcon className="h-5 w-5 text-neutral-400" />
+                          <UserIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                         </div>
                         <input
                           id="lastName"
                           type="text"
                           value={registrationData.lastName}
                           onChange={(e) => setRegistrationData({...registrationData, lastName: e.target.value})}
-                          className="w-full pl-10 pr-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                          style={{ 
+                            borderColor: "var(--color-border-light)", 
+                            borderWidth: "1px",
+                            backgroundColor: "var(--color-surface-light)",
+                            color: "var(--color-foreground-dark)",
+                            "--tw-ring-color": "var(--color-accent)" 
+                          } as React.CSSProperties}
                           placeholder="Doe"
                           required
                         />
@@ -316,19 +375,26 @@ export default function Auth() {
                   </div>
                   
                   <div className="mb-6">
-                    <label htmlFor="regEmail" className="block text-neutral-700 font-medium mb-2">
+                    <label htmlFor="regEmail" className="block font-medium mb-2" style={{ color: "var(--color-foreground-dark)" }}>
                       Email
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <EnvelopeIcon className="h-5 w-5 text-neutral-400" />
+                        <EnvelopeIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                       </div>
                       <input
                         id="regEmail"
                         type="email"
                         value={registrationData.email}
                         onChange={(e) => setRegistrationData({...registrationData, email: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ 
+                          borderColor: "var(--color-border-light)", 
+                          borderWidth: "1px",
+                          backgroundColor: "var(--color-surface-light)",
+                          color: "var(--color-foreground-dark)",
+                          "--tw-ring-color": "var(--color-accent)" 
+                        } as React.CSSProperties}
                         placeholder="you@example.com"
                         required
                       />
@@ -336,19 +402,26 @@ export default function Auth() {
                   </div>
                   
                   <div className="mb-6">
-                    <label htmlFor="mobileNumber" className="block text-neutral-700 font-medium mb-2">
+                    <label htmlFor="mobileNumber" className="block font-medium mb-2" style={{ color: "var(--color-foreground-dark)" }}>
                       Mobile Number
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <PhoneIcon className="h-5 w-5 text-neutral-400" />
+                        <PhoneIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                       </div>
                       <input
                         id="mobileNumber"
                         type="tel"
                         value={registrationData.mobileNumber}
                         onChange={(e) => setRegistrationData({...registrationData, mobileNumber: e.target.value})}
-                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ 
+                          borderColor: "var(--color-border-light)", 
+                          borderWidth: "1px",
+                          backgroundColor: "var(--color-surface-light)",
+                          color: "var(--color-foreground-dark)",
+                          "--tw-ring-color": "var(--color-accent)" 
+                        } as React.CSSProperties}
                         placeholder="+1 (555) 123-4567"
                         required
                       />
@@ -356,19 +429,26 @@ export default function Auth() {
                   </div>
                   
                   <div className="mb-6">
-                    <label htmlFor="regPassword" className="block text-neutral-700 font-medium mb-2">
+                    <label htmlFor="regPassword" className="block font-medium mb-2" style={{ color: "var(--color-foreground-dark)" }}>
                       Password
                     </label>
                     <div className="relative">
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <LockClosedIcon className="h-5 w-5 text-neutral-400" />
+                        <LockClosedIcon className="h-5 w-5" style={{ color: "var(--color-foreground-dark-alt)" }} />
                       </div>
                       <input
                         id="regPassword"
                         type={showPassword ? "text" : "password"}
                         value={registrationData.password}
                         onChange={(e) => setRegistrationData({...registrationData, password: e.target.value})}
-                        className="w-full pl-10 pr-12 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full pl-10 pr-12 py-3 rounded-lg focus:outline-none focus:ring-2"
+                        style={{ 
+                          borderColor: "var(--color-border-light)", 
+                          borderWidth: "1px",
+                          backgroundColor: "var(--color-surface-light)",
+                          color: "var(--color-foreground-dark)",
+                          "--tw-ring-color": "var(--color-accent)" 
+                        } as React.CSSProperties}
                         placeholder="••••••••"
                         required
                         minLength={6}
@@ -376,7 +456,8 @@ export default function Auth() {
                       <button
                         type="button"
                         onClick={() => setShowPassword(!showPassword)}
-                        className="absolute inset-y-0 right-0 pr-3 flex items-center text-neutral-500 hover:text-blue-700"
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center hover:text-[var(--color-primary)]"
+                        style={{ color: "var(--color-foreground-dark-alt)" }}
                       >
                         {showPassword ? (
                           <EyeSlashIcon className="h-5 w-5" />
@@ -385,7 +466,7 @@ export default function Auth() {
                         )}
                       </button>
                     </div>
-                    <p className="mt-2 text-sm text-neutral-500">
+                    <p className="mt-2 text-sm" style={{ color: "var(--color-foreground-dark-alt)" }}>
                       Password must be at least 6 characters
                     </p>
                   </div>
@@ -396,10 +477,15 @@ export default function Auth() {
                         id="terms"
                         type="checkbox"
                         required
-                        className="h-4 w-4 rounded border-blue-300 text-amber-500 focus:ring-amber-500"
+                        className="h-4 w-4 rounded"
+                        style={{
+                          borderColor: "var(--color-border-light)",
+                          color: "var(--color-accent)",
+                          "--tw-ring-color": "var(--color-accent)"
+                        } as React.CSSProperties}
                       />
-                      <label htmlFor="terms" className="ml-3 text-sm text-neutral-700">
-                        I agree to the <a href="/terms" className="text-amber-600 hover:text-amber-700">Terms of Service</a> and <a href="/privacy" className="text-amber-600 hover:text-amber-700">Privacy Policy</a>
+                      <label htmlFor="terms" className="ml-3 text-sm" style={{ color: "var(--color-foreground-dark)" }}>
+                        I agree to the <Link href="/terms" className="hover:underline" style={{ color: "var(--color-accent)" }}>Terms of Service</Link> and <Link href="/privacy" className="hover:underline" style={{ color: "var(--color-accent)" }}>Privacy Policy</Link>
                       </label>
                     </div>
                   </div>
@@ -407,21 +493,32 @@ export default function Auth() {
                   <button
                     type="submit"
                     disabled={isLoading || registerUserMutation.isPending}
-                    className="w-full bg-blue-700 text-white py-3 rounded-lg font-medium hover:bg-blue-800 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-800 focus:ring-offset-2 disabled:opacity-50"
+                    className="w-full py-3 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50"
+                    style={{ 
+                      backgroundColor: "var(--color-primary)",
+                      color: "var(--color-primary-foreground)",
+                      "--tw-ring-color": "var(--color-primary)"
+                    } as React.CSSProperties}
                   >
                     {isLoading || registerUserMutation.isPending ? "Creating Account..." : "Create Account"}
                   </button>
                   
                   <div className="mt-6 flex items-center">
-                    <div className="flex-grow border-t border-neutral-200"></div>
-                    <span className="mx-4 text-sm text-neutral-500">OR</span>
-                    <div className="flex-grow border-t border-neutral-200"></div>
+                    <div className="flex-grow border-t" style={{ borderColor: "var(--color-border-light)" }}></div>
+                    <span className="mx-4 text-sm" style={{ color: "var(--color-foreground-dark-alt)" }}>OR</span>
+                    <div className="flex-grow border-t" style={{ borderColor: "var(--color-border-light)" }}></div>
                   </div>
                   
                   <button
                     type="button"
                     onClick={() => signIn("google", { callbackUrl: redirectUrl })}
-                    className="w-full mt-6 bg-white border border-neutral-300 text-neutral-700 py-3 rounded-lg font-medium hover:bg-neutral-50 transition-colors focus:outline-none focus:ring-2 focus:ring-neutral-400 focus:ring-offset-2 flex items-center justify-center"
+                    className="w-full mt-6 border py-3 rounded-lg font-medium hover:bg-[rgba(10,25,48,0.05)] transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 flex items-center justify-center"
+                    style={{ 
+                      backgroundColor: "var(--color-surface-light)",
+                      borderColor: "var(--color-border-light)", 
+                      color: "var(--color-foreground-dark)",
+                      "--tw-ring-color": "var(--color-foreground-dark-alt)"
+                    } as React.CSSProperties}
                   >
                     <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
                       <path
@@ -437,12 +534,13 @@ export default function Auth() {
           </motion.div>
           
           <motion.p 
-            className="text-center mt-8 text-neutral-600 text-sm"
+            className="text-center mt-8 text-sm"
             variants={fadeInUp}
+            style={{ color: "var(--color-foreground-dark-alt)" }}
           >
             By using ZPay, you agree to our {" "}
-            <Link href="/terms" className="text-amber-600 hover:text-amber-700">Terms of Service</Link> and {" "}
-            <Link href="/privacy" className="text-amber-600 hover:text-amber-700">Privacy Policy</Link>.
+            <Link href="/terms" className="hover:underline" style={{ color: "var(--color-accent)" }}>Terms of Service</Link> and {" "}
+            <Link href="/privacy" className="hover:underline" style={{ color: "var(--color-accent)" }}>Privacy Policy</Link>.
           </motion.p>
         </motion.div>
       </main>

@@ -144,7 +144,7 @@ export default function Account() {
         <meta name="description" content="Manage your ZPay account settings, API keys, and webhook integrations." />
       </Head>
 
-      <main className="min-h-screen bg-blue-50 text-neutral-800 antialiased">
+      <main className="min-h-screen" style={{ backgroundColor: "var(--color-background)", color: "var(--color-foreground)" }}>
         <div className="container mx-auto px-6 py-12">
           <motion.div 
             className="mb-12"
@@ -153,13 +153,15 @@ export default function Account() {
             variants={staggerContainer}
           >
             <motion.h1 
-              className="text-3xl font-bold text-blue-800 md:text-4xl"
+              className="text-3xl font-bold md:text-4xl"
+              style={{ color: "var(--color-foreground)" }}
               variants={fadeInUp}
             >
               Account Settings
             </motion.h1>
             <motion.p 
-              className="mt-2 text-lg text-neutral-600"
+              className="mt-2 text-lg"
+              style={{ color: "var(--color-foreground-alt)" }}
               variants={fadeInUp}
             >
               Manage your ZPay account, API keys, and integration settings
@@ -169,27 +171,30 @@ export default function Account() {
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
             {/* Sidebar Navigation */}
             <div className="md:col-span-1">
-              <div className="sticky top-6 bg-white rounded-xl shadow-lg p-6 border border-blue-100">
-                <div className="flex items-center space-x-3 mb-8 pb-4 border-b border-blue-100">
-                  <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
-                    <UserCircleIcon className="h-8 w-8 text-blue-700" />
+              <div className="sticky top-6 rounded-xl shadow-lg p-6" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
+                <div className="flex items-center space-x-3 mb-8 pb-4" style={{ borderBottomColor: "var(--color-border)", borderBottomWidth: "1px" }}>
+                  <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--dark-navy-blue)", opacity: 0.3 }}>
+                    <UserCircleIcon className="h-8 w-8" style={{ color: "var(--color-foreground)" }} />
                   </div>
                   <div>
-                    <p className="font-medium">{session?.user?.name || "Account Owner"}</p>
-                    <p className="text-sm text-neutral-500">{session?.user?.email || "user@example.com"}</p>
+                    <p className="font-medium" style={{ color: "var(--color-foreground)" }}>{session?.user?.name || "Account Owner"}</p>
+                    <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>{session?.user?.email || "user@example.com"}</p>
                   </div>
                 </div>
 
                 <nav className="space-y-2">
-                  <a href="#api-keys" className="flex items-center px-4 py-3 text-blue-800 bg-blue-100 rounded-lg font-medium">
+                  <a href="#api-keys" className="flex items-center px-4 py-3 rounded-lg font-medium" style={{ 
+                    backgroundColor: "var(--color-primary)", 
+                    color: "var(--color-primary-foreground)" 
+                  }}>
                     <KeyIcon className="h-5 w-5 mr-3" />
                     API Keys
                   </a>
-                  <a href="#webhooks" className="flex items-center px-4 py-3 text-neutral-700 hover:bg-blue-50 rounded-lg">
+                  <a href="#webhooks" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
                     <GlobeAltIcon className="h-5 w-5 mr-3" />
                     Webhooks
                   </a>
-                  <a href="#profile" className="flex items-center px-4 py-3 text-neutral-700 hover:bg-blue-50 rounded-lg">
+                  <a href="#profile" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
                     <CogIcon className="h-5 w-5 mr-3" />
                     Settings
                   </a>
@@ -205,20 +210,20 @@ export default function Account() {
               </section>
               
               {/* Webhooks Section */}
-              <section id="webhooks" className="bg-white rounded-xl shadow-lg p-8 border border-blue-100">
+              <section id="webhooks" className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
                 <div className="flex items-center mb-6">
-                  <GlobeAltIcon className="h-8 w-8 text-amber-500 mr-4" />
-                  <h2 className="text-2xl font-bold text-blue-800">Webhook Configuration</h2>
+                  <GlobeAltIcon className="h-8 w-8 mr-4" style={{ color: "var(--color-accent)" }} />
+                  <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>Webhook Configuration</h2>
                 </div>
                 
-                <p className="text-neutral-600 mb-6">
+                <p className="mb-6" style={{ color: "var(--color-foreground-alt)" }}>
                   Configure webhook endpoints to receive real-time notifications about payment events. 
                   Your server needs to respond with a 2xx status code to acknowledge receipt.
                 </p>
                 
                 <div className="space-y-6">
                   <div>
-                    <label htmlFor="webhookUrl" className="block text-neutral-700 font-medium mb-2">
+                    <label htmlFor="webhookUrl" className="block font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                       Webhook URL
                     </label>
                     <input
@@ -226,13 +231,19 @@ export default function Account() {
                       id="webhookUrl"
                       value={webhookUrl}
                       onChange={(e) => setWebhookUrl(e.target.value)}
-                      className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                      className="w-full px-4 py-3 rounded-lg focus:outline-none"
+                      style={{ 
+                        backgroundColor: "var(--color-surface)", 
+                        borderColor: "var(--color-border)", 
+                        borderWidth: "1px",
+                        color: "var(--color-foreground)"
+                      }}
                       placeholder="https://example.com/api/webhooks/zpay"
                     />
                   </div>
                   
                   <div>
-                    <label htmlFor="webhookSecret" className="block text-neutral-700 font-medium mb-2">
+                    <label htmlFor="webhookSecret" className="block font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                       Webhook Secret
                     </label>
                     <div className="relative">
@@ -241,32 +252,39 @@ export default function Account() {
                         id="webhookSecret"
                         value={webhookSecret}
                         onChange={(e) => setWebhookSecret(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full px-4 py-3 rounded-lg focus:outline-none"
+                        style={{ 
+                          backgroundColor: "var(--color-surface)", 
+                          borderColor: "var(--color-border)", 
+                          borderWidth: "1px",
+                          color: "var(--color-foreground)"
+                        }}
                       />
                       <button 
                         onClick={() => {
                           navigator.clipboard.writeText(webhookSecret);
                           alert("Webhook secret copied to clipboard");
                         }}
-                        className="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600 hover:text-blue-800"
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2"
+                        style={{ color: "var(--color-accent)" }}
                       >
                         <ClipboardIcon className="h-5 w-5" />
                       </button>
                     </div>
-                    <p className="mt-2 text-sm text-neutral-500">
+                    <p className="mt-2 text-sm" style={{ color: "var(--color-foreground-alt)" }}>
                       This secret is used to verify that webhook events came from ZPay.
                     </p>
                   </div>
                   
-                  <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
-                    <h3 className="font-medium text-blue-800 mb-2">Test Your Webhook</h3>
-                    <p className="text-neutral-600 mb-4">
+                  <div className="rounded-lg p-6" style={{ backgroundColor: "rgba(7,18,36,0.1)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
+                    <h3 className="font-medium mb-2" style={{ color: "var(--color-foreground)" }}>Test Your Webhook</h3>
+                    <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
                       Send a test event to the <code>payment.confirmZcashPayment</code> endpoint.
                     </p>
                     
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                       <div>
-                        <label htmlFor="invoiceId" className="block text-neutral-700 text-sm font-medium mb-2">
+                        <label htmlFor="invoiceId" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                           Invoice ID (numeric)
                         </label>
                         <input
@@ -274,13 +292,19 @@ export default function Account() {
                           id="invoiceId"
                           value={invoiceId}
                           onChange={(e) => setInvoiceId(e.target.value)}
-                          className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                          style={{ 
+                            backgroundColor: "var(--color-surface)", 
+                            borderColor: "var(--color-border)", 
+                            borderWidth: "1px",
+                            color: "var(--color-foreground)"
+                          }}
                           placeholder="477"
                         />
                       </div>
                       
                       <div>
-                        <label htmlFor="userId" className="block text-neutral-700 text-sm font-medium mb-2">
+                        <label htmlFor="userId" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                           User ID (numeric)
                         </label>
                         <input
@@ -288,25 +312,26 @@ export default function Account() {
                           id="userId"
                           value={userId}
                           onChange={(e) => setUserId(e.target.value)}
-                          className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                          className="w-full px-4 py-2 rounded-lg focus:outline-none"
+                          style={{ 
+                            backgroundColor: "var(--color-surface)", 
+                            borderColor: "var(--color-border)", 
+                            borderWidth: "1px",
+                            color: "var(--color-foreground)"
+                          }}
                           placeholder="1"
                         />
-                      </div>
-                    </div>
-                    
-                    <div className="mb-6 bg-white border border-blue-200 rounded-lg p-4">
-                      <h4 className="font-medium text-blue-800 mb-2">Format</h4>
-                      <div className="bg-gray-100 p-3 rounded-lg overflow-x-auto">
-                        <pre className="text-xs">
-
-                        </pre>
                       </div>
                     </div>
                     
                     <button
                       onClick={testWebhook}
                       disabled={testWebhookLoading || !webhookUrl || !invoiceId || !userId}
-                      className="flex items-center px-6 py-3 bg-amber-200 text-blue-800 rounded-lg hover:bg-amber-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="flex items-center px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      style={{ 
+                        backgroundColor: "var(--color-accent)",
+                        color: "var(--color-accent-foreground)"
+                      }}
                     >
                       {testWebhookLoading ? (
                         <>
@@ -364,7 +389,11 @@ export default function Account() {
                   <div className="flex justify-end">
                     <button 
                       onClick={saveWebhookSettings}
-                      className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors"
+                      className="px-6 py-3 rounded-lg transition-colors"
+                      style={{ 
+                        backgroundColor: "var(--color-primary)",
+                        color: "var(--color-primary-foreground)"
+                      }}
                     >
                       Save Webhook Settings
                     </button>
@@ -373,17 +402,17 @@ export default function Account() {
               </section>
               
               {/* Profile Settings Section */}
-              <section id="profile" className="bg-white rounded-xl shadow-lg p-8 border border-blue-100">
+              <section id="profile" className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
                 <div className="flex items-center mb-6">
-                  <CogIcon className="h-8 w-8 text-amber-500 mr-4" />
-                  <h2 className="text-2xl font-bold text-blue-800">Account Settings</h2>
+                  <CogIcon className="h-8 w-8 mr-4" style={{ color: "var(--color-accent)" }} />
+                  <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>Account Settings</h2>
                 </div>
                 
                 <div className="space-y-8">
                   <div>
-                    <h3 className="font-medium text-blue-800 mb-4">Payout Settings</h3>
+                    <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Payout Settings</h3>
                     <div>
-                      <label htmlFor="zecAddress" className="block text-neutral-700 mb-2">
+                      <label htmlFor="zecAddress" className="block mb-2" style={{ color: "var(--color-foreground)" }}>
                         Zcash Shielded Address (zs...)
                       </label>
                       <input
@@ -391,46 +420,48 @@ export default function Account() {
                         id="zecAddress"
                         value={zecAddress}
                         onChange={(e) => setZecAddress(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                        className="w-full px-4 py-3 rounded-lg focus:outline-none"
+                        style={{ 
+                          backgroundColor: "var(--color-surface)", 
+                          borderColor: "var(--color-border)", 
+                          borderWidth: "1px",
+                          color: "var(--color-foreground)"
+                        }}
                         placeholder="zs1..."
                       />
-                      <p className="mt-2 text-sm text-neutral-500">
+                      <p className="mt-2 text-sm" style={{ color: "var(--color-foreground-alt)" }}>
                         All payments will be sent directly to this shielded address.
                       </p>
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="font-medium text-blue-800 mb-4">Notification Preferences</h3>
+                    <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Notification Preferences</h3>
                     <div className="flex items-center">
                       <input
                         type="checkbox"
                         id="notifications"
                         checked={notificationsEnabled}
                         onChange={() => setNotificationsEnabled(!notificationsEnabled)}
-                        className="h-5 w-5 rounded border-blue-300 text-amber-500 focus:ring-amber-500"
+                        className="h-5 w-5 rounded focus:ring-2"
+                        style={{ 
+                          accentColor: "var(--color-accent)",
+                          borderColor: "var(--color-border)" 
+                        }}
                       />
-                      <label htmlFor="notifications" className="ml-3 text-neutral-700">
+                      <label htmlFor="notifications" className="ml-3" style={{ color: "var(--color-foreground)" }}>
                         Email me when payments are received
                       </label>
                     </div>
                   </div>
                   
-                  <div>
-                    <h3 className="font-medium text-blue-800 mb-4">Danger Zone</h3>
-                    <div className="bg-red-50 rounded-lg p-6 border border-red-200">
-                      <h4 className="text-red-700 font-medium mb-2">Delete Account</h4>
-                      <p className="text-neutral-600 mb-4">
-                        Permanently delete your account and all associated data. This action cannot be undone.
-                      </p>
-                      <button className="px-4 py-2 bg-white text-red-600 border border-red-300 rounded-lg hover:bg-red-100 transition-colors">
-                        Delete Account
-                      </button>
-                    </div>
-                  </div>
-                  
                   <div className="flex justify-end">
-                    <button className="px-6 py-3 bg-blue-700 text-white rounded-lg hover:bg-blue-800 transition-colors">
+                    <button className="px-6 py-3 rounded-lg transition-colors"
+                      style={{ 
+                        backgroundColor: "var(--color-primary)",
+                        color: "var(--color-primary-foreground)"
+                      }}
+                    >
                       Save Settings
                     </button>
                   </div>

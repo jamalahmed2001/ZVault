@@ -7,3 +7,9 @@ they provide us with their website url which they wud like us to send webhook pa
 they also give us their Zzcash address to send payments to instantly no holding your payments. 
 We then generate an api key for them to make api calls to the backend payment service 
 
+TODO:
+
+KYC KYB KYT AML
+
+generate webhok secret 
+store wallet address and txids in the database when the w2 sends we have all info we need to send data to the database. 

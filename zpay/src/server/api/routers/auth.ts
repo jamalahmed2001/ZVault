@@ -4,6 +4,8 @@ import { createTRPCRouter, publicProcedure, protectedProcedure } from "@/server/
 import { hash, compare } from "bcryptjs";
 // import { sendEmail } from "@/utils/emailService";
 import twilio from "twilio";
+import crypto from "crypto";
+import { sendEmail } from "@/utils/email"; // You'll need to implement this utility
 
 // Initialize Twilio client with proper error handling
 let twilioClient: twilio.Twilio | null = null;
@@ -380,5 +382,144 @@ export const authRouter = createTRPCRouter({
           message: error instanceof Error ? error.message : "Failed to test webhook",
         });
       }
+    }),
+
+  // Request password reset
+  requestPasswordReset: publicProcedure
+    .input(z.object({
+      email: z.string().email(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { email } = input;
+      
+      // Find user by email
+      const user = await ctx.db.user.findUnique({
+        where: { email },
+      });
+      
+      // Don't reveal if user exists or not for security
+      if (!user) {
+        // Still return success to avoid leaking user existence
+        return { success: true };
+      }
+      
+      // Generate a reset token
+      const resetToken = crypto.randomBytes(32).toString("hex");
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(resetToken)
+        .digest("hex");
+      
+      // Set token expiry (1 hour)
+      const resetTokenExpiry = new Date();
+      resetTokenExpiry.setHours(resetTokenExpiry.getHours() + 1);
+      
+      // Save token to database
+      await ctx.db.user.update({
+        where: { id: user.id },
+        data: {
+          resetToken: tokenHash,
+          resetTokenExpiry,
+        },
+      });
+      
+      // Create reset URL
+      const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password/${resetToken}`;
+      
+      // Send email with reset link
+      await sendEmail({
+        to: user.email || "",
+        subject: "ZPay Password Reset",
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #0a1930;">Reset Your ZPay Password</h2>
+            <p>You requested a password reset for your ZPay account. Click the button below to create a new password:</p>
+            <a href="${resetUrl}" style="display: inline-block; background-color: #0a1930; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; margin: 16px 0;">Reset Password</a>
+            <p>This link will expire in 1 hour.</p>
+            <p>If you didn't request this password reset, please ignore this email or contact support if you have concerns.</p>
+            <p>Thanks,<br>The ZPay Team</p>
+          </div>
+        `,
+      });
+      
+      return { success: true };
+    }),
+
+  // Verify reset token
+  verifyResetToken: publicProcedure
+    .input(z.object({
+      token: z.string(),
+    }))
+    .query(async ({ ctx, input }) => {
+      const { token } = input;
+      
+      // Hash the token
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+      
+      // Find user with this token
+      const user = await ctx.db.user.findFirst({
+        where: {
+          resetToken: tokenHash,
+          resetTokenExpiry: { gt: new Date() },
+        },
+      });
+      
+      if (!user) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid or expired password reset token",
+        });
+      }
+      
+      return { valid: true };
+    }),
+
+  // Reset password
+  resetPassword: publicProcedure
+    .input(z.object({
+      token: z.string(),
+      newPassword: z.string().min(8),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const { token, newPassword } = input;
+      
+      // Hash the token
+      const tokenHash = crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+      
+      // Find user with this token
+      const user = await ctx.db.user.findFirst({
+        where: {
+          resetToken: tokenHash,
+          resetTokenExpiry: { gt: new Date() },
+        },
+      });
+      
+      if (!user) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Invalid or expired password reset token",
+        });
+      }
+      
+      // Hash the new password
+      const hashedPassword = await hash(newPassword, 10);
+      
+      // Update user with new password and clear reset token
+      await ctx.db.user.update({
+        where: { id: user.id },
+        data: {
+          password: hashedPassword,
+          resetToken: null,
+          resetTokenExpiry: null,
+        },
+      });
+      
+      return { success: true };
     }),
 }); 

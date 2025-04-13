@@ -155,57 +155,66 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
 
   if (fetchApiKeys.isLoading) {
     return (
-      <div className="bg-white rounded-xl shadow-lg p-8 border border-blue-100">
+      <div className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
         <div className="flex justify-center items-center h-40">
-          <ArrowPathIcon className="h-8 w-8 text-blue-500 animate-spin" />
-          <span className="ml-2 text-neutral-600">Loading API keys...</span>
+          <ArrowPathIcon className="h-8 w-8 animate-spin" style={{ color: "var(--color-accent)" }} />
+          <span className="ml-2" style={{ color: "var(--color-foreground-alt)" }}>Loading API keys...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-8 border border-blue-100">
+    <div className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
       <div className="flex items-center mb-6">
-        <ClipboardIcon className="h-8 w-8 text-amber-500 mr-4" />
-        <h2 className="text-2xl font-bold text-blue-800">API Key Management</h2>
+        <ClipboardIcon className="h-8 w-8 mr-4" style={{ color: "var(--color-accent)" }} />
+        <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>API Key Management</h2>
       </div>
       
-      <p className="text-neutral-600 mb-6">
+      <p className="mb-6" style={{ color: "var(--color-foreground-alt)" }}>
         Your API keys grant access to your ZPay account. Keep them secure and never share them in public repositories or client-side code.
       </p>
       
       {/* API Keys List */}
       {apiKeys.length > 0 && (
         <div className="mb-8">
-          <h3 className="font-medium text-blue-800 mb-4">Your API Keys</h3>
+          <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Your API Keys</h3>
           <div className="space-y-4">
             {apiKeys.map((key) => (
               <div 
                 key={key.id} 
-                className={`p-4 border rounded-lg cursor-pointer ${
-                  activeKeyId === key.id ? 'border-amber-400 bg-amber-50' : 'border-gray-200 hover:bg-gray-50'
-                }`}
+                className={`p-4 border rounded-lg cursor-pointer`}
+                style={{ 
+                  backgroundColor: activeKeyId === key.id ? "rgba(190, 164, 114, 0.1)" : "var(--color-surface)",
+                  borderColor: activeKeyId === key.id ? "var(--color-accent)" : "var(--color-border)"
+                }}
                 onClick={() => selectApiKey(key)}
               >
                 <div className="flex justify-between items-center">
                   <div>
-                    <p className="font-medium">{key.name || "API Key"}</p>
-                    <p className="text-sm text-gray-500">Created on {new Date(key.createdAt).toLocaleDateString()}</p>
+                    <p className="font-medium" style={{ color: "var(--color-foreground)" }}>{key.name || "API Key"}</p>
+                    <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>Created on {new Date(key.createdAt).toLocaleDateString()}</p>
                   </div>
                   <button 
                     onClick={(e) => { 
                       e.stopPropagation();
                       deleteApiKey(key.id);
                     }}
-                    className="p-2 text-red-500 hover:bg-red-50 rounded-full"
+                    className="p-2 rounded-full"
+                    style={{ color: "var(--color-error)" }}
                     title="Delete API Key"
                   >
                     <TrashIcon className="h-5 w-5" />
                   </button>
                 </div>
                 {activeKeyId === key.id && (
-                  <div className="mt-3 font-mono text-sm p-2 bg-white border border-amber-200 rounded-lg overflow-x-auto">
+                  <div className="mt-3 font-mono text-sm p-2 rounded-lg overflow-x-auto" 
+                    style={{ 
+                      backgroundColor: "rgba(49, 55, 69, 0.5)", 
+                      borderColor: "var(--color-accent)", 
+                      borderWidth: "1px",
+                      color: "var(--color-foreground)"
+                    }}>
                     {key.key}
                   </div>
                 )}
@@ -216,13 +225,17 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
       )}
       
       {/* Create New API Key */}
-      <div className="rounded-lg border border-blue-200 p-6 bg-blue-50 mb-8">
-        <h3 className="font-medium text-blue-800 mb-4">
+      <div className="rounded-lg border p-6 mb-8" 
+        style={{ 
+          backgroundColor: "rgba(7, 18, 36, 0.2)", 
+          borderColor: "var(--color-border)" 
+        }}>
+        <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>
           {apiKeys.length ? "Create New API Key" : "Create Your First API Key"}
         </h3>
         
         <div className="mb-4">
-          <label htmlFor="apiKeyName" className="block text-neutral-700 text-sm font-medium mb-2">
+          <label htmlFor="apiKeyName" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
             API Key Name
           </label>
           <input
@@ -230,7 +243,13 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
             id="apiKeyName"
             value={apiKeyName}
             onChange={(e) => setApiKeyName(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+            className="w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2"
+            style={{ 
+              backgroundColor: "var(--color-surface)", 
+              borderColor: "var(--color-border)", 
+              borderWidth: "1px",
+              color: "var(--color-foreground)"
+            }}
             placeholder="My API Key"
           />
         </div>
@@ -239,7 +258,13 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
           <button 
             onClick={regenerateApiKey}
             disabled={isRegenerating || generateApiKeyMutation.isPending}
-            className="flex items-center px-4 py-2 rounded-lg border border-amber-200 bg-amber-100 hover:bg-amber-200 transition-colors disabled:opacity-50"
+            className="flex items-center px-4 py-2 rounded-lg transition-colors disabled:opacity-50"
+            style={{ 
+              backgroundColor: "var(--color-accent)",
+              color: "var(--color-accent-foreground)",
+              borderColor: "var(--color-accent)",
+              borderWidth: "1px"
+            }}
           >
             <ArrowPathIcon className={`h-5 w-5 mr-2 ${isRegenerating ? 'animate-spin' : ''}`} />
             <span>{isRegenerating ? 'Generating...' : 'Generate API Key'}</span>
@@ -248,12 +273,16 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
           {apiKey && (
             <button 
               onClick={copyApiKey}
-              className="flex items-center px-4 py-2 rounded-lg border border-blue-200 hover:bg-blue-100 transition-colors"
+              className="flex items-center px-4 py-2 rounded-lg border transition-colors"
+              style={{ 
+                borderColor: "var(--color-border)",
+                color: "var(--color-foreground)" 
+              }}
             >
               {copied ? (
                 <>
-                  <CheckIcon className="h-5 w-5 mr-2 text-green-600" />
-                  <span className="text-green-600">Copied!</span>
+                  <CheckIcon className="h-5 w-5 mr-2" style={{ color: "var(--color-success)" }} />
+                  <span style={{ color: "var(--color-success)" }}>Copied!</span>
                 </>
               ) : (
                 <>
@@ -266,17 +295,23 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
         </div>
         
         {generateApiKeyMutation.error && (
-          <div className="mt-4 p-3 bg-red-50 text-red-700 rounded-md">
+          <div className="mt-4 p-3 rounded-md" style={{ backgroundColor: "var(--color-error)", color: "var(--color-error-foreground)" }}>
             Error: {generateApiKeyMutation.error.message}
           </div>
         )}
         
         {apiKey && (
           <div className="mt-4">
-            <div className="flex items-center bg-white border border-blue-200 rounded-lg px-4 py-3 font-mono text-sm overflow-x-auto">
+            <div className="flex items-center rounded-lg px-4 py-3 font-mono text-sm overflow-x-auto" 
+              style={{ 
+                backgroundColor: "rgba(49, 55, 69, 0.5)", 
+                borderColor: "var(--color-border)", 
+                borderWidth: "1px",
+                color: "var(--color-foreground)" 
+              }}>
               {apiKey}
             </div>
-            <p className="mt-2 text-sm text-neutral-500">
+            <p className="mt-2 text-sm" style={{ color: "var(--color-foreground-alt)" }}>
               Store this somewhere safe. For security reasons, you won't be able to see the full key again.
             </p>
           </div>
@@ -285,15 +320,19 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
       
       {/* API Testing Section */}
       {apiKey && (
-        <div className="rounded-lg border border-blue-200 p-6 bg-blue-50">
-          <h3 className="font-medium text-blue-800 mb-4">Test API Key</h3>
-          <p className="text-sm text-neutral-600 mb-6">
+        <div className="rounded-lg border p-6" 
+          style={{ 
+            backgroundColor: "rgba(7, 18, 36, 0.2)", 
+            borderColor: "var(--color-border)" 
+          }}>
+          <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Test API Key</h3>
+          <p className="text-sm mb-6" style={{ color: "var(--color-foreground-alt)" }}>
             Test your API key by creating a Zcash payment request with the following parameters:
           </p>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
-              <label htmlFor="userId" className="block text-neutral-700 text-sm font-medium mb-2">
+              <label htmlFor="userId" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                 User ID
               </label>
               <input
@@ -301,13 +340,19 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
                 id="userId"
                 value={userId}
                 onChange={(e) => setUserId(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{ 
+                  backgroundColor: "var(--color-surface)", 
+                  borderColor: "var(--color-border)", 
+                  borderWidth: "1px",
+                  color: "var(--color-foreground)"
+                }}
                 placeholder="1"
               />
             </div>
             
             <div>
-              <label htmlFor="invoiceId" className="block text-neutral-700 text-sm font-medium mb-2">
+              <label htmlFor="invoiceId" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                 Invoice ID
               </label>
               <input
@@ -315,13 +360,19 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
                 id="invoiceId"
                 value={invoiceId}
                 onChange={(e) => setInvoiceId(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{ 
+                  backgroundColor: "var(--color-surface)", 
+                  borderColor: "var(--color-border)", 
+                  borderWidth: "1px",
+                  color: "var(--color-foreground)"
+                }}
                 placeholder="477"
               />
             </div>
             
             <div>
-              <label htmlFor="amount" className="block text-neutral-700 text-sm font-medium mb-2">
+              <label htmlFor="amount" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
                 Amount (ZEC)
               </label>
               <input
@@ -329,15 +380,27 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
                 id="amount"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-blue-200 focus:outline-none focus:ring-2 focus:ring-amber-400"
+                className="w-full px-4 py-2 rounded-lg focus:outline-none focus:ring-2"
+                style={{ 
+                  backgroundColor: "var(--color-surface)", 
+                  borderColor: "var(--color-border)", 
+                  borderWidth: "1px",
+                  color: "var(--color-foreground)"
+                }}
                 placeholder="10"
               />
             </div>
           </div>
           
           <div className="mb-6">
-            <div className="text-sm text-neutral-700 font-medium mb-2">API Endpoint:</div>
-            <div className="bg-white border border-blue-200 rounded-lg px-4 py-3 font-mono text-sm break-all">
+            <div className="text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>API Endpoint:</div>
+            <div className="rounded-lg px-4 py-3 font-mono text-sm break-all" 
+              style={{ 
+                backgroundColor: "rgba(49, 55, 69, 0.5)", 
+                borderColor: "var(--color-border)", 
+                borderWidth: "1px",
+                color: "var(--color-foreground)" 
+              }}>
               https://www.v3nture.link/create?user_id={userId}&invoice_id={invoiceId}&amount={Number(amount) * 100}
             </div>
           </div>
@@ -345,7 +408,11 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
           <button
             onClick={testApiKey}
             disabled={isTestingApi || !userId || !invoiceId || !amount}
-            className="flex items-center px-6 py-3 bg-amber-200 text-blue-800 rounded-lg hover:bg-amber-300 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex items-center px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ 
+              backgroundColor: "var(--color-accent)",
+              color: "var(--color-accent-foreground)"
+            }}
           >
             {isTestingApi ? (
               <>
@@ -362,7 +429,10 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
           
           {testResult && (
             <div className="mt-6 space-y-4">
-              <div className={`p-4 rounded-lg ${testResult.success ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+              <div className="p-4 rounded-lg" style={{ 
+                backgroundColor: testResult.success ? "var(--color-success)" : "var(--color-error)",
+                color: testResult.success ? "var(--color-success-foreground)" : "var(--color-error-foreground)"
+              }}>
                 <div className="flex items-start">
                   {testResult.success ? (
                     <CheckIcon className="h-5 w-5 mr-2 mt-0.5" />
@@ -376,10 +446,14 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
               </div>
               
               {testResult.response && (
-                <div className="bg-white border border-blue-200 rounded-lg p-4">
-                  <h4 className="font-medium text-blue-800 mb-2">Response Details</h4>
-                  <div className="bg-gray-100 p-3 rounded-lg overflow-x-auto">
-                    <pre className="text-xs">
+                <div className="rounded-lg p-4" style={{ 
+                  backgroundColor: "var(--color-surface)", 
+                  borderColor: "var(--color-border)", 
+                  borderWidth: "1px"
+                }}>
+                  <h4 className="font-medium mb-2" style={{ color: "var(--color-foreground)" }}>Response Details</h4>
+                  <div className="p-3 rounded-lg overflow-x-auto" style={{ backgroundColor: "rgba(49, 55, 69, 0.5)" }}>
+                    <pre className="text-xs" style={{ color: "var(--color-foreground)" }}>
                       {JSON.stringify(testResult.response, null, 2)}
                     </pre>
                   </div>
@@ -390,8 +464,8 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
         </div>
       )}
       
-      <div className="mt-8 text-sm text-neutral-500">
-        <p>Need a production API key? <a href="#" className="text-amber-600 hover:text-amber-700">Contact our team</a> to verify your account.</p>
+      <div className="mt-8 text-sm" style={{ color: "var(--color-foreground-alt)" }}>
+        <p>Need a production API key? <a href="#" style={{ color: "var(--color-accent)" }}>Contact our team</a> to verify your account.</p>
       </div>
     </div>
   );
