@@ -621,6 +621,7 @@ export const authRouter = createTRPCRouter({
       z.object({
         url: z.string().url(),
         secret: z.string().min(1),
+        apiKeyId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -631,6 +632,23 @@ export const authRouter = createTRPCRouter({
             userId: ctx.session.user.id,
           },
         });
+        
+        // If apiKeyId is provided, verify it belongs to the user
+        if (input.apiKeyId) {
+          const apiKey = await ctx.db.apiKey.findFirst({
+            where: {
+              id: input.apiKeyId,
+              userId: ctx.session.user.id,
+            },
+          });
+          
+          if (!apiKey) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: "API key not found or does not belong to this user",
+            });
+          }
+        }
         
         let webhookConfig;
         
@@ -643,6 +661,7 @@ export const authRouter = createTRPCRouter({
             data: {
               url: input.url,
               secret: input.secret,
+              apiKeyId: input.apiKeyId,
               updatedAt: new Date(),
             },
           });
@@ -653,6 +672,7 @@ export const authRouter = createTRPCRouter({
               url: input.url,
               secret: input.secret,
               userId: ctx.session.user.id,
+              apiKeyId: input.apiKeyId,
             },
           });
         }

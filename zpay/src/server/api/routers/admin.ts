@@ -117,6 +117,14 @@ export const adminRouter = createTRPCRouter({
                 name: true,
                 isActive: true,
                 createdAt: true,
+                webhookConfigs: {
+                  select: {
+                    id: true,
+                    url: true,
+                    secret: true,
+                    isActive: true,
+                  }
+                }
               },
             },
             webhookConfig: {
@@ -125,6 +133,13 @@ export const adminRouter = createTRPCRouter({
                 url: true,
                 secret: true,
                 isActive: true,
+                apiKey: {
+                  select: {
+                    id: true,
+                    key: true,
+                    name: true,
+                  }
+                }
               },
             },
           },

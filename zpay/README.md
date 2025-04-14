@@ -10,6 +10,5 @@ We then generate an api key for them to make api calls to the backend payment se
 TODO:
 
 KYC KYB KYT AML
-
-generate webhok secret 
-store wallet address and txids in the database when the w2 sends we have all info we need to send data to the database. 
+Regiserer as ushop 
+and intefrate and test 
