@@ -175,6 +175,76 @@ export const authRouter = createTRPCRouter({
       return { success: true, message: "User registered successfully" };
     }),
 
+  // Get user profile
+  getUserProfile: protectedProcedure
+    .query(async ({ ctx }) => {
+      try {
+        const user = await ctx.db.user.findUnique({
+          where: { id: ctx.session.user.id },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            image: true,
+            username: true,
+            first_name: true,
+            last_name: true,
+            phone: true,
+            zcashAddress: true,
+            webhookConfig: true
+          }
+        });
+        
+        if (!user) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "User not found",
+          });
+        }
+        
+        return user;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        
+        console.error("Failed to fetch user profile:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to fetch user profile",
+        });
+      }
+    }),
+
+  // Update user settings
+  updateUserSettings: protectedProcedure
+    .input(
+      z.object({
+        zcashAddress: z.string().optional(),
+        notificationsEnabled: z.boolean().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        const updatedUser = await ctx.db.user.update({
+          where: { id: ctx.session.user.id },
+          data: {
+            zcashAddress: input.zcashAddress,
+            // In a real app, you might store notificationsEnabled in a separate table or column
+          },
+        });
+        
+        return { 
+          success: true,
+          message: "User settings updated successfully"
+        };
+      } catch (error) {
+        console.error("Failed to update user settings:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to update user settings",
+        });
+      }
+    }),
+
   // Generate API Key
   generateApiKey: protectedProcedure
     .input(
@@ -335,10 +405,10 @@ export const authRouter = createTRPCRouter({
         
         return webhookConfig;
       } catch (error) {
-        console.error("Failed to fetch webhook config:", error);
+        console.error("Failed to fetch webhook configuration:", error);
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch webhook config",
+          message: error instanceof Error ? error.message : "Failed to fetch webhook configuration",
         });
       }
     }),
@@ -521,5 +591,82 @@ export const authRouter = createTRPCRouter({
       });
       
       return { success: true };
+    }),
+
+  // Generate Webhook Secret
+  generateWebhookSecret: protectedProcedure
+    .mutation(async () => {
+      try {
+        // Generate a random webhook secret with prefix
+        const secretPrefix = "whsec_";
+        const randomPart = crypto.randomBytes(16).toString('hex');
+        const secret = secretPrefix + randomPart;
+        
+        return { 
+          success: true,
+          secret: secret
+        };
+      } catch (error) {
+        console.error("Failed to generate webhook secret:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to generate webhook secret",
+        });
+      }
+    }),
+
+  // Save Webhook Configuration
+  saveWebhookConfig: protectedProcedure
+    .input(
+      z.object({
+        url: z.string().url(),
+        secret: z.string().min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Check if the user already has a webhook configuration
+        const existingConfig = await ctx.db.webhookConfig.findUnique({
+          where: {
+            userId: ctx.session.user.id,
+          },
+        });
+        
+        let webhookConfig;
+        
+        if (existingConfig) {
+          // Update existing configuration
+          webhookConfig = await ctx.db.webhookConfig.update({
+            where: {
+              id: existingConfig.id,
+            },
+            data: {
+              url: input.url,
+              secret: input.secret,
+              updatedAt: new Date(),
+            },
+          });
+        } else {
+          // Create new configuration
+          webhookConfig = await ctx.db.webhookConfig.create({
+            data: {
+              url: input.url,
+              secret: input.secret,
+              userId: ctx.session.user.id,
+            },
+          });
+        }
+        
+        return { 
+          success: true,
+          webhookConfig: webhookConfig
+        };
+      } catch (error) {
+        console.error("Failed to save webhook configuration:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to save webhook configuration",
+        });
+      }
     }),
 }); 

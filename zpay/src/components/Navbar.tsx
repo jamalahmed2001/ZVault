@@ -6,13 +6,28 @@ import {
   XMarkIcon,
   UserCircleIcon,
 } from "@heroicons/react/24/outline";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/router";
 
 const Navbar = () => {
   const { data: sessionData } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const router = useRouter();
+  const [isAdminPage, setIsAdminPage] = useState(false);
+
+  // Check if current page is admin page
+  useEffect(() => {
+    if (router.pathname.startsWith('/admin')) {
+      setIsAdminPage(true);
+    } else {
+      setIsAdminPage(false);
+    }
+  }, [router.pathname]);
+
+  // Don't render navbar on admin pages
+  if (isAdminPage) {
+    return null;
+  }
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 

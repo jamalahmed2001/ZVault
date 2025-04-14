@@ -5,6 +5,7 @@ import { useSession } from "next-auth/react";
 
 interface ApiKeyManagerProps {
   initialApiKey?: string;
+  onApiKeySelect?: (apiKey: string) => void;
 }
 
 interface ApiKey {
@@ -16,7 +17,7 @@ interface ApiKey {
   updatedAt: Date;
 }
 
-export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
+export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyManagerProps) {
   const { data: session } = useSession();
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [activeKeyId, setActiveKeyId] = useState<string | null>(null);
@@ -41,6 +42,7 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
     onSuccess: (data) => {
       setApiKey(data.apiKey);
       setActiveKeyId(data.id);
+      if (onApiKeySelect) onApiKeySelect(data.apiKey);
       fetchApiKeys.refetch();
     }
   });
@@ -61,9 +63,10 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
       if (fetchApiKeys.data.length > 0 && !activeKeyId) {
         setActiveKeyId(fetchApiKeys.data[0]!.id);
         setApiKey(fetchApiKeys.data[0]!.key);
+        if (onApiKeySelect) onApiKeySelect(fetchApiKeys.data[0]!.key);
       }
     }
-  }, [fetchApiKeys.data, activeKeyId]);
+  }, [fetchApiKeys.data, activeKeyId, onApiKeySelect]);
 
   // Copy API key to clipboard
   const copyApiKey = () => {
@@ -87,6 +90,7 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
       if (id === activeKeyId) {
         setActiveKeyId(null);
         setApiKey("");
+        if (onApiKeySelect) onApiKeySelect("");
       }
     }
   };
@@ -96,6 +100,7 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
     setActiveKeyId(key.id);
     setApiKey(key.key);
     setApiKeyName(key.name || "Default API Key");
+    if (onApiKeySelect) onApiKeySelect(key.key);
   };
   
   // Test API
@@ -104,8 +109,9 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
     setTestResult(null);
     
     try {
-      // Use the API endpoint provided
-      const response = await fetch(`https://www.v3nture.link/create?user_id=${userId}&invoice_id=${invoiceId}&amount=${Number(amount) * 100}`, {
+      // Use the API endpoint provided with API key in the request
+      const url = `https://www.v3nture.link/create?api_key=${apiKey}&user_id=${userId}&invoice_id=${invoiceId}&amount=${Number(amount) * 100}`;
+      const response = await fetch(url, {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${apiKey}`,
@@ -127,7 +133,11 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
         status: response.status,
         statusText: response.statusText,
         body: responseBody,
-        headers: Object.fromEntries([...response.headers.entries()])
+        headers: Object.fromEntries([...response.headers.entries()]),
+        request: {
+          url: url,
+          api_key: apiKey
+        }
       };
       
       // Determine if the request was successful (2xx status code)
@@ -145,7 +155,10 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
         success: false,
         message: "Failed to test API: Network error or invalid URL",
         response: {
-          error: error instanceof Error ? error.message : "Unknown error"
+          error: error instanceof Error ? error.message : "Unknown error",
+          request: {
+            api_key: apiKey
+          }
         }
       });
     } finally {
@@ -392,6 +405,26 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
             </div>
           </div>
           
+          {/* API Key field (readonly) */}
+          <div className="mb-6">
+            <label htmlFor="apiKeyTest" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
+              API Key
+            </label>
+            <input
+              type="text"
+              id="apiKeyTest"
+              value={apiKey}
+              readOnly
+              className="w-full px-4 py-2 rounded-lg focus:outline-none font-mono"
+              style={{ 
+                backgroundColor: "rgba(49, 55, 69, 0.5)", 
+                borderColor: "var(--color-border)", 
+                borderWidth: "1px",
+                color: "var(--color-foreground)"
+              }}
+            />
+          </div>
+          
           <div className="mb-6">
             <div className="text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>API Endpoint:</div>
             <div className="rounded-lg px-4 py-3 font-mono text-sm break-all" 
@@ -407,7 +440,7 @@ export default function ApiKeyManager({ initialApiKey }: ApiKeyManagerProps) {
           
           <button
             onClick={testApiKey}
-            disabled={isTestingApi || !userId || !invoiceId || !amount}
+            disabled={isTestingApi || !userId || !invoiceId || !amount || !apiKey}
             className="flex items-center px-6 py-3 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             style={{ 
               backgroundColor: "var(--color-accent)",
