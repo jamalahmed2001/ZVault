@@ -1187,24 +1187,29 @@ export const adminRouter = createTRPCRouter({
       z.object({
         // We need to identify the transaction - can be by id or combination of identifying fields
         transactionId: z.string().optional(),
-        // Alternative identifiers if transactionId is not available
+        // Alternative identifiers used by bash script
+        dbUserId: z.string().optional(),
         userId: z.string().optional(),
         clientUserId: z.string().optional(),
         invoiceId: z.string().optional(),
         // The data to update
-        txHashes: z.array(z.string()),
-        addressesUsed: z.array(z.string()),
+        txHashes: z.array(z.string().min(1)),
+        addressesUsed: z.array(z.string().min(1)),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
         // Ensure we have at least one way to identify the transaction
-        if (!input.transactionId && !input.invoiceId && !(input.userId && input.clientUserId)) {
+        if (!input.transactionId && !input.invoiceId && !input.dbUserId && !(input.userId && input.clientUserId)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "You must provide either transactionId, invoiceId, or both userId and clientUserId",
+            message: "You must provide either transactionId, invoiceId, dbUserId, or both userId and clientUserId",
           });
         }
+
+        // Filter out empty strings from arrays
+        const txHashes = input.txHashes.filter(hash => hash && hash.trim() !== "");
+        const addressesUsed = input.addressesUsed.filter(addr => addr && addr.trim() !== "");
 
         // Build query to find the transaction
         const where: any = {};
@@ -1213,7 +1218,9 @@ export const adminRouter = createTRPCRouter({
           where.id = input.transactionId;
         } else {
           // Build compound query based on available identifiers
-          if (input.userId) {
+          if (input.dbUserId) {
+            where.userId = input.dbUserId;
+          } else if (input.userId) {
             where.userId = input.userId;
           }
           
@@ -1246,11 +1253,11 @@ export const adminRouter = createTRPCRouter({
         const updatedTransaction = await ctx.db.transaction.update({
           where: { id: transaction.id },
           data: {
-            txHashes: input.txHashes,
-            addressesUsed: input.addressesUsed,
+            txHashes: txHashes.length > 0 ? txHashes : undefined,
+            addressesUsed: addressesUsed.length > 0 ? addressesUsed : undefined,
             // If we're adding transaction details, it's likely moving to COMPLETED state
             // Only update status if it's currently PENDING or PROCESSING
-            ...(["PENDING", "PROCESSING"].includes(transaction.status) 
+            ...(["PENDING", "PROCESSING"].includes(transaction.status) && (txHashes.length > 0 || addressesUsed.length > 0)
               ? { status: "COMPLETED", completedAt: new Date() } 
               : {}),
           },
