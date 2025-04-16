@@ -10,5 +10,8 @@ We then generate an api key for them to make api calls to the backend payment se
 TODO:
 
 KYC KYB KYT AML
-Regiserer as ushop 
-and intefrate and test 
+
+upload wallet and trasnactions to db rather than having just folder structure auto magic
+pub priv key encruyption
+variable fee for promo  
+manual txid verification

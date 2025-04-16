@@ -621,7 +621,6 @@ export const authRouter = createTRPCRouter({
       z.object({
         url: z.string().url(),
         secret: z.string().min(1),
-        apiKeyId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -632,23 +631,6 @@ export const authRouter = createTRPCRouter({
             userId: ctx.session.user.id,
           },
         });
-        
-        // If apiKeyId is provided, verify it belongs to the user
-        if (input.apiKeyId) {
-          const apiKey = await ctx.db.apiKey.findFirst({
-            where: {
-              id: input.apiKeyId,
-              userId: ctx.session.user.id,
-            },
-          });
-          
-          if (!apiKey) {
-            throw new TRPCError({
-              code: "BAD_REQUEST",
-              message: "API key not found or does not belong to this user",
-            });
-          }
-        }
         
         let webhookConfig;
         
@@ -661,7 +643,6 @@ export const authRouter = createTRPCRouter({
             data: {
               url: input.url,
               secret: input.secret,
-              apiKeyId: input.apiKeyId,
               updatedAt: new Date(),
             },
           });
@@ -672,7 +653,6 @@ export const authRouter = createTRPCRouter({
               url: input.url,
               secret: input.secret,
               userId: ctx.session.user.id,
-              apiKeyId: input.apiKeyId,
             },
           });
         }
@@ -686,6 +666,87 @@ export const authRouter = createTRPCRouter({
         throw new TRPCError({
           code: "INTERNAL_SERVER_ERROR",
           message: error instanceof Error ? error.message : "Failed to save webhook configuration",
+        });
+      }
+    }),
+
+  // Get user transactions with filtering options
+  getTransactions: protectedProcedure
+    .input(
+      z.object({
+        status: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REVERSED']).optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        clientUserId: z.string().optional(),
+        invoiceId: z.string().optional(),
+        limit: z.number().min(1).max(100).default(20),
+        cursor: z.string().optional(), // For pagination
+        sortDirection: z.enum(["asc", "desc"]).default("desc"),
+      }).optional(),
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const filters: any = {
+          userId: ctx.session.user.id,
+        };
+
+        // Apply filters if provided
+        if (input?.status) {
+          filters.status = input.status;
+        }
+
+        if (input?.clientUserId) {
+          filters.clientUserId = input.clientUserId;
+        }
+
+        if (input?.invoiceId) {
+          filters.invoiceId = input.invoiceId;
+        }
+
+        // Date range filter
+        if (input?.startDate || input?.endDate) {
+          filters.createdAt = {};
+          
+          if (input?.startDate) {
+            filters.createdAt.gte = input.startDate;
+          }
+          
+          if (input?.endDate) {
+            filters.createdAt.lte = input.endDate;
+          }
+        }
+
+        // Setup for cursor-based pagination
+        const take = input?.limit ?? 20;
+        const cursor = input?.cursor ? { id: input.cursor } : undefined;
+
+        // Fetch transactions with filters and pagination
+        const transactions = await ctx.db.transaction.findMany({
+          where: filters,
+          take: take + 1, // Get one extra to know if there are more
+          cursor,
+          orderBy: {
+            createdAt: input?.sortDirection ?? "desc",
+          },
+        });
+
+        // Check if there are more results
+        let nextCursor: string | undefined = undefined;
+        if (transactions.length > take) {
+          const nextItem = transactions.pop();
+          nextCursor = nextItem?.id;
+        }
+
+        return { 
+          transactions,
+          nextCursor,
+          totalCount: await ctx.db.transaction.count({ where: filters }),
+        };
+      } catch (error) {
+        console.error("Failed to fetch transactions:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to fetch transactions",
         });
       }
     }),

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { TRPCError } from "@trpc/server";
-import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "@/server/api/trpc";
 
 // Create an admin middleware
 const isAdmin = (userId: string) => {
@@ -117,14 +117,6 @@ export const adminRouter = createTRPCRouter({
                 name: true,
                 isActive: true,
                 createdAt: true,
-                webhookConfigs: {
-                  select: {
-                    id: true,
-                    url: true,
-                    secret: true,
-                    isActive: true,
-                  }
-                }
               },
             },
             webhookConfig: {
@@ -133,13 +125,6 @@ export const adminRouter = createTRPCRouter({
                 url: true,
                 secret: true,
                 isActive: true,
-                apiKey: {
-                  select: {
-                    id: true,
-                    key: true,
-                    name: true,
-                  }
-                }
               },
             },
           },
@@ -878,4 +863,416 @@ export const adminRouter = createTRPCRouter({
       });
     }
   }),
+
+  // Get all transactions with pagination and filters
+  getAllTransactions: adminProcedure
+    .input(
+      z.object({
+        page: z.number().min(1).default(1),
+        limit: z.number().min(1).max(100).default(10),
+        status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "REVERSED"]).optional(),
+        userId: z.string().optional(),
+        startDate: z.date().optional(),
+        endDate: z.date().optional(),
+        sortBy: z.enum(["createdAt", "amount", "status", "completedAt"]).default("createdAt"),
+        sortOrder: z.enum(["asc", "desc"]).default("desc"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const {
+          page,
+          limit,
+          status,
+          userId,
+          startDate,
+          endDate,
+          sortBy,
+          sortOrder,
+        } = input;
+
+        // Build filter conditions
+        const where: any = {};
+        
+        if (status) {
+          where.status = status;
+        }
+        
+        if (userId) {
+          where.userId = userId;
+        }
+        
+        if (startDate || endDate) {
+          where.createdAt = {};
+          if (startDate) {
+            where.createdAt.gte = startDate;
+          }
+          if (endDate) {
+            where.createdAt.lte = endDate;
+          }
+        }
+
+        // Count total transactions with these filters
+        const totalCount = await ctx.db.transaction.count({ where });
+        
+        // Calculate pagination values
+        const skip = (page - 1) * limit;
+        const totalPages = Math.ceil(totalCount / limit);
+        
+        // Fetch transactions with user information
+        const transactions = await ctx.db.transaction.findMany({
+          where,
+          orderBy: {
+            [sortBy]: sortOrder,
+          },
+          skip,
+          take: limit,
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                username: true,
+                first_name: true,
+                last_name: true,
+              },
+            },
+          },
+        });
+
+        return {
+          transactions,
+          pagination: {
+            total: totalCount,
+            page,
+            limit,
+            totalPages,
+          },
+        };
+      } catch (error) {
+        console.error("Failed to fetch transactions:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to fetch transactions",
+        });
+      }
+    }),
+
+  // Get transaction by ID
+  getTransactionById: adminProcedure
+    .input(z.object({ transactionId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      try {
+        const transaction = await ctx.db.transaction.findUnique({
+          where: { id: input.transactionId },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                username: true,
+                first_name: true,
+                last_name: true,
+                zcashAddress: true,
+              },
+            },
+          },
+        });
+
+        if (!transaction) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Transaction not found",
+          });
+        }
+
+        return transaction;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error("Failed to fetch transaction:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to fetch transaction",
+        });
+      }
+    }),
+
+  // Update transaction status
+  updateTransactionStatus: adminProcedure
+    .input(
+      z.object({
+        transactionId: z.string(),
+        status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "REVERSED"]),
+        completedAt: z.date().optional(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Check if transaction exists
+        const transactionExists = await ctx.db.transaction.findUnique({
+          where: { id: input.transactionId },
+        });
+
+        if (!transactionExists) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Transaction not found",
+          });
+        }
+
+        // Prepare update data
+        const updateData: any = {
+          status: input.status,
+        };
+
+        // If status is COMPLETED and completedAt is not provided, set it to now
+        if (input.status === "COMPLETED" && !input.completedAt) {
+          updateData.completedAt = new Date();
+        } else if (input.status !== "COMPLETED") {
+          // If status is not COMPLETED, set completedAt to null
+          updateData.completedAt = null;
+        } else if (input.completedAt) {
+          // If completedAt is provided, use it
+          updateData.completedAt = input.completedAt;
+        }
+
+        // Update transaction
+        const updatedTransaction = await ctx.db.transaction.update({
+          where: { id: input.transactionId },
+          data: updateData,
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                username: true,
+              },
+            },
+          },
+        });
+
+        return updatedTransaction;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error("Failed to update transaction status:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to update transaction status",
+        });
+      }
+    }),
+
+  // Get transaction statistics
+  getTransactionStats: adminProcedure
+    .input(
+      z.object({
+        period: z.enum(["day", "week", "month", "year"]).default("month"),
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      try {
+        const now = new Date();
+        
+        // Determine the start date based on the period
+        let startDate: Date;
+        switch (input.period) {
+          case "day":
+            startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - 1);
+            break;
+          case "week":
+            startDate = new Date(now);
+            startDate.setDate(startDate.getDate() - 7);
+            break;
+          case "year":
+            startDate = new Date(now);
+            startDate.setFullYear(startDate.getFullYear() - 1);
+            break;
+          case "month":
+          default:
+            startDate = new Date(now);
+            startDate.setMonth(startDate.getMonth() - 1);
+            break;
+        }
+        
+        // Get total count for each status
+        const [
+          pendingCount,
+          processingCount,
+          completedCount,
+          failedCount,
+          reversedCount,
+          totalAmount,
+          totalFees,
+        ] = await Promise.all([
+          ctx.db.transaction.count({ 
+            where: { 
+              status: "PENDING",
+              createdAt: { gte: startDate }
+            } 
+          }),
+          ctx.db.transaction.count({ 
+            where: { 
+              status: "PROCESSING",
+              createdAt: { gte: startDate }
+            } 
+          }),
+          ctx.db.transaction.count({ 
+            where: { 
+              status: "COMPLETED",
+              createdAt: { gte: startDate }
+            } 
+          }),
+          ctx.db.transaction.count({ 
+            where: { 
+              status: "FAILED",
+              createdAt: { gte: startDate }
+            } 
+          }),
+          ctx.db.transaction.count({ 
+            where: { 
+              status: "REVERSED",
+              createdAt: { gte: startDate }
+            } 
+          }),
+          ctx.db.transaction.aggregate({
+            _sum: {
+              amount: true,
+            },
+            where: {
+              status: "COMPLETED",
+              createdAt: { gte: startDate }
+            }
+          }),
+          ctx.db.transaction.aggregate({
+            _sum: {
+              fee: true,
+            },
+            where: {
+              status: "COMPLETED",
+              createdAt: { gte: startDate }
+            }
+          }),
+        ]);
+        
+        // Calculate total transactions
+        const totalTransactions = pendingCount + processingCount + completedCount + failedCount + reversedCount;
+        
+        return {
+          period: input.period,
+          totalTransactions,
+          statuses: {
+            pending: pendingCount,
+            processing: processingCount,
+            completed: completedCount,
+            failed: failedCount,
+            reversed: reversedCount,
+          },
+          totalAmount: totalAmount._sum.amount || 0,
+          totalFees: totalFees._sum.fee || 0,
+          successRate: totalTransactions > 0 ? (completedCount / totalTransactions) * 100 : 0,
+        };
+      } catch (error) {
+        console.error("Failed to fetch transaction stats:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to fetch transaction stats",
+        });
+      }
+    }),
+
+  // Update transaction with txHashes and addresses
+  updateTransactionDetails: publicProcedure
+    .input(
+      z.object({
+        // We need to identify the transaction - can be by id or combination of identifying fields
+        transactionId: z.string().optional(),
+        // Alternative identifiers if transactionId is not available
+        userId: z.string().optional(),
+        clientUserId: z.string().optional(),
+        invoiceId: z.string().optional(),
+        // The data to update
+        txHashes: z.array(z.string()),
+        addressesUsed: z.array(z.string()),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Ensure we have at least one way to identify the transaction
+        if (!input.transactionId && !input.invoiceId && !(input.userId && input.clientUserId)) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: "You must provide either transactionId, invoiceId, or both userId and clientUserId",
+          });
+        }
+
+        // Build query to find the transaction
+        const where: any = {};
+        
+        if (input.transactionId) {
+          where.id = input.transactionId;
+        } else {
+          // Build compound query based on available identifiers
+          if (input.userId) {
+            where.userId = input.userId;
+          }
+          
+          if (input.clientUserId) {
+            where.clientUserId = input.clientUserId;
+          }
+          
+          if (input.invoiceId) {
+            where.invoiceId = input.invoiceId;
+          }
+        }
+
+        // Find the transaction
+        const transaction = await ctx.db.transaction.findFirst({
+          where,
+          orderBy: {
+            // If multiple transactions match the criteria, get the most recent one
+            createdAt: "desc"
+          }
+        });
+
+        if (!transaction) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "Transaction not found",
+          });
+        }
+
+        // Update the transaction with the provided data
+        const updatedTransaction = await ctx.db.transaction.update({
+          where: { id: transaction.id },
+          data: {
+            txHashes: input.txHashes,
+            addressesUsed: input.addressesUsed,
+            // If we're adding transaction details, it's likely moving to COMPLETED state
+            // Only update status if it's currently PENDING or PROCESSING
+            ...(["PENDING", "PROCESSING"].includes(transaction.status) 
+              ? { status: "COMPLETED", completedAt: new Date() } 
+              : {}),
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                email: true,
+                username: true,
+              },
+            },
+          },
+        });
+
+        return updatedTransaction;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error("Failed to update transaction details:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to update transaction details",
+        });
+      }
+    }),
 }); 

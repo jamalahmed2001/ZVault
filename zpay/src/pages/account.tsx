@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { motion } from "framer-motion";
-import { ClipboardIcon, ArrowPathIcon, CheckIcon, BellAlertIcon, KeyIcon, GlobeAltIcon, UserCircleIcon, CogIcon } from '@heroicons/react/24/outline';
+import { ArrowPathIcon, CheckIcon, KeyIcon, GlobeAltIcon, UserCircleIcon, CogIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
 import ApiKeyManager from "@/components/ApiKeyManager";
 import WebhookManager from "@/components/WebhookManager";
+import TransactionLog from "@/components/TransactionLog";
 import { api } from "@/utils/api";
 import type { TRPCClientErrorLike } from "@trpc/client";
 import type { AppRouter } from "@/server/api/root";
@@ -237,6 +238,10 @@ export default function Account() {
                     <GlobeAltIcon className="h-5 w-5 mr-3" />
                     Webhooks
                   </a>
+                  <a href="#transactions" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
+                    <CurrencyDollarIcon className="h-5 w-5 mr-3" />
+                    Transactions
+                  </a>
                   <a href="#profile" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
                     <CogIcon className="h-5 w-5 mr-3" />
                     Settings
@@ -253,13 +258,18 @@ export default function Account() {
               </section>
               
               {/* Webhooks Section */}
-              <section id="webhooks" className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
+              <section id="webhooks">
                 <WebhookManager 
                   initialApiKey={selectedApiKey}
                   onWebhookSelect={(url, secret) => {
                     // Handle selected webhook if needed
                   }} 
                 />
+              </section>
+
+              {/* Transactions Section */}
+              <section id="transactions">
+                <TransactionLog initialApiKey={selectedApiKey} />
               </section>
               
               {/* Profile Settings Section */}

@@ -31,7 +31,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const [isAdmin, setIsAdmin] = useState(false);
   
   // Check if the current user is an admin
-  const { data: currentUser, isLoading: isUserLoading, isError } = api.admin.getUserById.useQuery(
+  const { data: currentUser, isLoading: isUserLoading, isError } = api.admin.getUserById!.useQuery(
     { userId: session?.user?.id || "" },
     {
       enabled: !!session?.user?.id,
@@ -57,6 +57,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: HomeIcon },
     { name: "Users", href: "/admin/users", icon: UserIcon },
+    { name: "Transactions", href: "/admin/transactions", icon: CurrencyDollarIcon },
     { name: "Analytics", href: "/admin/analytics", icon: ChartBarIcon },
     { name: "Posts", href: "/admin/posts", icon: DocumentTextIcon },
     { name: "Settings", href: "/admin/settings", icon: CogIcon },
