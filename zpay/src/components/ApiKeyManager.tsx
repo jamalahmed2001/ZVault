@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ClipboardIcon, ArrowPathIcon, CheckIcon, BeakerIcon, TrashIcon } from '@heroicons/react/24/outline';
 import { api } from "@/utils/api";
 import { useSession } from "next-auth/react";
-
+import { Decimal } from "@prisma/client/runtime/library";
 interface ApiKeyManagerProps {
   initialApiKey?: string;
   onApiKeySelect?: (apiKey: string) => void;
@@ -15,6 +15,7 @@ interface ApiKey {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  transactionFee: Decimal;
 }
 
 export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyManagerProps) {

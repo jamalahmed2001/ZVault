@@ -40,6 +40,7 @@ type ApiKey = {
   name: string | null;
   isActive: boolean;
   createdAt: Date;
+  transactionFee?: number;
 };
 
 type WebhookConfig = {
@@ -88,6 +89,7 @@ export default function UserManagement() {
   const [apiKey, setApiKey] = useState("");
   const [apiKeyName, setApiKeyName] = useState("Default API Key");
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
+  const [apiKeyFee, setApiKeyFee] = useState(2.5);
   const [webhookUrl, setWebhookUrl] = useState("");
   const [webhookSecret, setWebhookSecret] = useState("");
   const [webhookCopied, setWebhookCopied] = useState(false);
@@ -141,7 +143,34 @@ export default function UserManagement() {
     },
   });
 
+  const createApiKeyMutation = api.admin.createApiKey.useMutation({
+    onSuccess: (data) => {
+      if (data.apiKey?.key) {
+        setApiKey(data.apiKey.key);
+      }
+      utils.admin.getAllUsers.invalidate();
+    },
+  });
+
   const deleteApiKeyMutation = api.auth.deleteApiKey.useMutation({
+    onSuccess: () => {
+      utils.admin.getAllUsers.invalidate();
+    },
+  });
+
+  const adminDeleteApiKeyMutation = api.admin.deleteApiKey.useMutation({
+    onSuccess: () => {
+      utils.admin.getAllUsers.invalidate();
+    },
+  });
+
+  const updateApiKeyFeeMutation = api.admin.updateApiKeyFee.useMutation({
+    onSuccess: () => {
+      utils.admin.getAllUsers.invalidate();
+    },
+  });
+
+  const toggleApiKeyStatusMutation = api.admin.toggleApiKeyStatus.useMutation({
     onSuccess: () => {
       utils.admin.getAllUsers.invalidate();
     },
@@ -193,7 +222,25 @@ export default function UserManagement() {
   
   const generateApiKey = () => {
     if (selectedUser) {
-      generateApiKeyMutation.mutate({ name: apiKeyName });
+      // Use admin API for creating an API key for a user
+      createApiKeyMutation.mutate({ 
+        userId: selectedUser.id,
+        name: apiKeyName,
+        transactionFee: apiKeyFee
+      });
+    }
+  };
+  
+  const deleteApiKey = (keyId: string) => {
+    if (selectedUser) {
+      // Use admin API to delete a user's API key
+      adminDeleteApiKeyMutation.mutate({ id: keyId });
+    }
+  };
+
+  const toggleApiKeyStatus = (keyId: string) => {
+    if (selectedUser) {
+      toggleApiKeyStatusMutation.mutate({ id: keyId });
     }
   };
   
@@ -253,6 +300,7 @@ export default function UserManagement() {
     // Reset API key and webhook states
     setApiKey("");
     setApiKeyName("Default API Key");
+    setApiKeyFee(2.5);
     setWebhookUrl("");
     setWebhookSecret("");
     setUserApiKeys([]);
@@ -325,7 +373,12 @@ export default function UserManagement() {
   useEffect(() => {
     if (userDetails) {
       if (userDetails.apiKeys) {
-        setUserApiKeys(userDetails.apiKeys);
+        // Map API keys to ensure transactionFee is a number
+        const formattedApiKeys = userDetails.apiKeys.map(key => ({
+          ...key,
+          transactionFee: key.transactionFee ? Number(key.transactionFee) : 2.5
+        }));
+        setUserApiKeys(formattedApiKeys);
       }
       
       if (userDetails.webhookConfig) {
@@ -426,6 +479,12 @@ export default function UserManagement() {
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
                 >
+                  Fee (%)
+                </th>
+                <th
+                  scope="col"
+                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+                >
                   Webhook
                 </th>
                 <th
@@ -498,6 +557,15 @@ export default function UserManagement() {
                         </div>
                       ) : (
                         <span className="text-sm text-orange-500">Not Set</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.apiKeys && user.apiKeys.length > 0 && user.apiKeys[0]?.transactionFee !== undefined ? (
+                        <span className="text-sm text-gray-900">
+                          {Number(user.apiKeys[0].transactionFee).toFixed(2)}%
+                        </span>
+                      ) : (
+                        <span className="text-sm text-gray-500">Default</span>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -887,85 +955,167 @@ export default function UserManagement() {
                       
                       <div className="border-t border-gray-200 pt-4 mt-4">
                         <h5 className="text-sm font-medium text-gray-700 mb-2">Generate New API Key</h5>
-                        <div className="flex space-x-2">
-                          <input
-                            type="text"
-                            value={apiKeyName}
-                            onChange={(e) => setApiKeyName(e.target.value)}
-                            placeholder="API Key Name"
-                            className="flex-1 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                          />
-                          <button
-                            type="button"
-                            onClick={generateApiKey}
-                            className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                          >
-                            <KeyIcon className="h-4 w-4 mr-2" />
-                            Generate
-                          </button>
-                        </div>
-                        
-                        {apiKey && (
-                          <div className="mt-4">
-                            <div className="flex justify-between items-center mb-1">
-                              <label className="block text-sm font-medium text-gray-700">
-                                New API Key
+                        <div className="flex flex-col space-y-3">
+                          <div className="flex space-x-2">
+                            <input
+                              type="text"
+                              value={apiKeyName}
+                              onChange={(e) => setApiKeyName(e.target.value)}
+                              placeholder="API Key Name"
+                              className="flex-1 px-3 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                            />
+                            <div className="flex items-center space-x-2">
+                              <label htmlFor="apiKeyFee" className="text-xs whitespace-nowrap">
+                                Fee (%):
                               </label>
+                              <input
+                                id="apiKeyFee"
+                                type="number"
+                                min="0"
+                                max="100"
+                                step="0.01"
+                                value={apiKeyFee}
+                                onChange={(e) => setApiKeyFee(parseFloat(e.target.value) || 0)}
+                                className="w-16 px-2 py-2 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                              />
                               <button
                                 type="button"
-                                onClick={() => copyToClipboard(apiKey, setApiKeyCopied)}
-                                className="inline-flex items-center text-xs text-indigo-600"
+                                onClick={generateApiKey}
+                                className="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
                               >
-                                {apiKeyCopied ? (
-                                  <>
-                                    <CheckIcon className="h-4 w-4 mr-1" />
-                                    Copied!
-                                  </>
-                                ) : (
-                                  <>
-                                    <ClipboardIcon className="h-4 w-4 mr-1" />
-                                    Copy
-                                  </>
-                                )}
+                                <KeyIcon className="h-4 w-4 mr-2" />
+                                Generate
                               </button>
                             </div>
-                            <div className="bg-gray-50 p-2 rounded-md font-mono text-xs overflow-x-auto">
-                              {apiKey}
-                            </div>
-                            <p className="mt-1 text-xs text-gray-500">
-                              Store this key securely. You won't be able to see it again.
-                            </p>
                           </div>
-                        )}
-                      </div>
-                      
-                      {userApiKeys && userApiKeys.length > 0 && (
-                        <div className="border-t border-gray-200 pt-4 mt-4">
-                          <h5 className="text-sm font-medium text-gray-700 mb-2">Existing API Keys</h5>
-                          <div className="space-y-3 max-h-60 overflow-y-auto">
-                            {userApiKeys.map((key) => (
-                              <div key={key.id} className="border border-gray-200 rounded-md p-3">
-                                <div className="flex justify-between items-center mb-1">
-                                  <span className="text-sm font-medium text-gray-700">
-                                    {key.name || "Unnamed Key"}
-                                  </span>
-                                  <div className="flex items-center space-x-2">
-                                    <span className="text-xs text-gray-500">
-                                      {new Date(key.createdAt).toLocaleDateString()}
+                          
+                          {apiKey && (
+                            <div className="mt-4">
+                              <div className="flex justify-between items-center mb-1">
+                                <label className="block text-sm font-medium text-gray-700">
+                                  New API Key
+                                </label>
+                                <button
+                                  type="button"
+                                  onClick={() => copyToClipboard(apiKey, setApiKeyCopied)}
+                                  className="inline-flex items-center text-xs text-indigo-600"
+                                >
+                                  {apiKeyCopied ? (
+                                    <>
+                                      <CheckIcon className="h-4 w-4 mr-1" />
+                                      Copied!
+                                    </>
+                                  ) : (
+                                    <>
+                                      <ClipboardIcon className="h-4 w-4 mr-1" />
+                                      Copy
+                                    </>
+                                  )}
+                                </button>
+                              </div>
+                              <div className="bg-gray-50 p-2 rounded-md font-mono text-xs overflow-x-auto">
+                                {apiKey}
+                              </div>
+                              <p className="mt-1 text-xs text-gray-500">
+                                Store this key securely. You won't be able to see it again.
+                              </p>
+                            </div>
+                          )}
+                        </div>
+                        
+                        {userApiKeys && userApiKeys.length > 0 && (
+                          <div className="border-t border-gray-200 pt-4 mt-4">
+                            <h5 className="text-sm font-medium text-gray-700 mb-2">Existing API Keys</h5>
+                            <div className="space-y-3 max-h-60 overflow-y-auto">
+                              {userApiKeys.map((key) => (
+                                <div key={key.id} className="border border-gray-200 rounded-md p-3">
+                                  <div className="flex justify-between items-center mb-1">
+                                    <span className="text-sm font-medium text-gray-700">
+                                      {key.name || "Unnamed Key"}
                                     </span>
-                                    {key.key && (
+                                    <div className="flex items-center space-x-2">
+                                      <span className="text-xs text-gray-500">
+                                        {new Date(key.createdAt).toLocaleDateString()}
+                                      </span>
+                                      {key.key && (
+                                        <button
+                                          type="button"
+                                          onClick={() => copyToClipboard(key.key!, setApiKeyCopied)}
+                                          className="text-indigo-600 hover:text-indigo-800"
+                                          title="Copy API Key"
+                                        >
+                                          <ClipboardIcon className="h-4 w-4" />
+                                        </button>
+                                      )}
                                       <button
                                         type="button"
-                                        onClick={() => copyToClipboard(key.key!, setApiKeyCopied)}
-                                        className="text-indigo-600 hover:text-indigo-800"
-                                        title="Copy API Key"
+                                        onClick={() => deleteApiKey(key.id)}
+                                        className="text-red-600 hover:text-red-800"
+                                        title="Delete API Key"
                                       >
-                                        <ClipboardIcon className="h-4 w-4" />
+                                        <TrashIcon className="h-4 w-4" />
                                       </button>
-                                    )}
+                                    </div>
+                                  </div>
+                                  {key.key && (
+                                    <div className="bg-gray-50 p-2 rounded-md font-mono text-xs overflow-x-auto mt-1">
+                                      {key.key}
+                                    </div>
+                                  )}
+                                  <div className="mt-2 flex items-center">
+                                    <label className="block text-xs font-medium text-gray-700 mr-2">
+                                      Transaction Fee (%):
+                                    </label>
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      max="100"
+                                      step="0.01"
+                                      defaultValue={key.transactionFee ?? 2.5}
+                                      className="w-20 px-2 py-1 rounded-md border border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 text-xs"
+                                      id={`fee-input-${key.id}`}
+                                      onChange={(e) => {
+                                        // Just store the value in the input (we'll save on button click)
+                                        e.target.dataset.newFee = e.target.value;
+                                      }}
+                                    />
                                     <button
                                       type="button"
-                                      onClick={() => deleteApiKeyMutation.mutate({ id: key.id })}
+                                      className="ml-2 inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-500"
+                                      onClick={(e) => {
+                                        const input = document.getElementById(`fee-input-${key.id}`) as HTMLInputElement;
+                                        const newFee = parseFloat(input.value);
+                                        if (!isNaN(newFee) && newFee >= 0 && newFee <= 100) {
+                                          updateApiKeyFeeMutation.mutate({
+                                            id: key.id,
+                                            transactionFee: newFee
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      Save
+                                    </button>
+                                    <button
+                                      type="button"
+                                      className="ml-2 inline-flex items-center px-2 py-1 border border-transparent text-xs font-medium rounded text-indigo-600 bg-white border-indigo-300 hover:bg-indigo-50 focus:outline-none focus:ring-1 focus:ring-offset-1 focus:ring-indigo-500"
+                                      onClick={() => toggleApiKeyStatus(key.id)}
+                                      title={key.isActive ? "Deactivate API key" : "Activate API key"}
+                                    >
+                                      {key.isActive ? (
+                                        <XMarkIcon className="h-4 w-4" />
+                                      ) : (
+                                        <CheckIcon className="h-4 w-4" />
+                                      )}
+                                      {key.isActive ? "Disable" : "Enable"}
+                                    </button>
+                                  </div>
+                                  <div className="flex justify-between items-center mt-2">
+                                    <span className={`text-xs ${key.isActive ? "text-green-600" : "text-red-600"}`}>
+                                      {key.isActive ? "Active" : "Disabled"}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      onClick={() => deleteApiKey(key.id)}
                                       className="text-red-600 hover:text-red-800"
                                       title="Delete API Key"
                                     >
@@ -973,25 +1123,20 @@ export default function UserManagement() {
                                     </button>
                                   </div>
                                 </div>
-                                {key.key && (
-                                  <div className="bg-gray-50 p-2 rounded-md font-mono text-xs overflow-x-auto mt-1">
-                                    {key.key}
-                                  </div>
-                                )}
-                              </div>
-                            ))}
+                              ))}
+                            </div>
                           </div>
+                        )}
+                        
+                        <div className="mt-6 flex justify-end">
+                          <button
+                            type="button"
+                            onClick={closeModal}
+                            className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+                          >
+                            Close
+                          </button>
                         </div>
-                      )}
-                      
-                      <div className="mt-6 flex justify-end">
-                        <button
-                          type="button"
-                          onClick={closeModal}
-                          className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                          Close
-                        </button>
                       </div>
                     </div>
                   ) : (

@@ -250,6 +250,7 @@ export const authRouter = createTRPCRouter({
     .input(
       z.object({
         name: z.string().optional(),
+        transactionFee: z.number().min(0).max(100).default(2.5),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -260,12 +261,13 @@ export const authRouter = createTRPCRouter({
                           Math.random().toString(36).substring(2, 15);
         const apiKey = apiKeyPrefix + randomPart;
         
-        // Save to database
+        // Save to database with transaction fee
         const savedKey = await ctx.db.apiKey.create({
           data: {
             key: apiKey,
             name: input.name || "Default API Key",
             userId: ctx.session.user.id,
+            transactionFee: input.transactionFee,
           },
         });
         
@@ -750,4 +752,5 @@ export const authRouter = createTRPCRouter({
         });
       }
     }),
+
 }); 

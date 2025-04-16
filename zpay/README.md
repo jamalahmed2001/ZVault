@@ -11,7 +11,6 @@ TODO:
 
 KYC KYB KYT AML
 
-upload wallet and trasnactions to db rather than having just folder structure auto magic
 pub priv key encruyption
 variable fee for promo  
 manual txid verification

@@ -99,6 +99,7 @@ model ApiKey {
   userId         String
   webhookConfigs WebhookConfig[]
   Transaction    Transaction[]
+  transactionFee Decimal         @default(1) @db.Decimal(5, 2)
 }
 
 model WebhookConfig {

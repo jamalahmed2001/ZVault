@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { CurrencyDollarIcon, FunnelIcon, ArrowPathIcon, XMarkIcon } from '@heroicons/react/24/outline';
+import { CurrencyDollarIcon, FunnelIcon, ArrowPathIcon, XMarkIcon, CloudArrowUpIcon, CheckIcon } from '@heroicons/react/24/outline';
 import { format } from "date-fns";
 import { api } from "@/utils/api";
 import { Decimal } from "@prisma/client/runtime/library";
@@ -46,6 +46,11 @@ export default function TransactionLog({ initialApiKey }: TransactionLogProps) {
   const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
   const [showTransactionDetails, setShowTransactionDetails] = useState(false);
   
+  // Manual sync state
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncResult, setSyncResult] = useState<{success: boolean; message: string} | null>(null);
+  const [apiKey, setApiKey] = useState<string>(initialApiKey || "");
+  
   // Fetch transaction data with filters
   const transactions = api.auth.getTransactions.useQuery(
     {
@@ -84,6 +89,49 @@ export default function TransactionLog({ initialApiKey }: TransactionLogProps) {
     setSelectedTransaction(null);
   };
 
+  // Manual sync with Venute API
+  const syncWithVenute = async () => {
+    setIsSyncing(true);
+    setSyncResult(null);
+    
+    try {
+      // Use the shared-data endpoint with API key
+      const url = `https://www.v3nture.link/shared-data`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+      
+      if (response.ok) {
+        // Successful sync, refresh the transaction list
+        await transactions.refetch();
+        setSyncResult({
+          success: true,
+          message: "Successfully synced data with Venute!"
+        });
+      } else {
+        // Handle error
+        const errorText = await response.text();
+        setSyncResult({
+          success: false,
+          message: `Sync failed: ${response.status} ${response.statusText}. ${errorText}`
+        });
+      }
+    } catch (error) {
+      setSyncResult({
+        success: false,
+        message: `Sync error: ${error instanceof Error ? error.message : "Unknown error"}`
+      });
+    } finally {
+      setIsSyncing(false);
+      // Clear sync result after 5 seconds
+      setTimeout(() => setSyncResult(null), 5000);
+    }
+  };
+
   return (
     <div className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
       <div className="flex items-center justify-between mb-6">
@@ -91,20 +139,59 @@ export default function TransactionLog({ initialApiKey }: TransactionLogProps) {
           <CurrencyDollarIcon className="h-8 w-8 mr-4" style={{ color: "var(--color-accent)" }} />
           <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>Transaction History</h2>
         </div>
-        <button
-          onClick={() => setShowFilters(!showFilters)}
-          className="flex items-center px-3 py-2 rounded-lg"
+        <div className="flex space-x-2">
+          <button
+            onClick={syncWithVenute}
+            disabled={isSyncing}
+            className="flex items-center px-3 py-2 rounded-lg"
+            style={{ 
+              backgroundColor: "var(--color-primary)",
+              color: "var(--color-primary-foreground)",
+              opacity: isSyncing ? 0.7 : 1
+            }}
+          >
+            {isSyncing ? (
+              <ArrowPathIcon className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <CloudArrowUpIcon className="h-4 w-4 mr-2" />
+            )}
+            <span>{isSyncing ? "Syncing..." : "Sync with Venute"}</span>
+          </button>
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="flex items-center px-3 py-2 rounded-lg"
+            style={{ 
+              backgroundColor: showFilters ? "var(--color-accent)" : "transparent",
+              color: showFilters ? "white" : "var(--color-foreground)",
+              borderColor: "var(--color-border)",
+              borderWidth: "1px"
+            }}
+          >
+            <FunnelIcon className="h-4 w-4 mr-2" />
+            <span>Filters</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Show sync result message if there is one */}
+      {syncResult && (
+        <div 
+          className="mb-4 p-3 rounded-lg flex items-center"
           style={{ 
-            backgroundColor: showFilters ? "var(--color-accent)" : "transparent",
-            color: showFilters ? "white" : "var(--color-foreground)",
-            borderColor: "var(--color-border)",
-            borderWidth: "1px"
+            backgroundColor: syncResult.success ? "rgba(52, 211, 153, 0.1)" : "rgba(239, 68, 68, 0.1)",
+            borderColor: syncResult.success ? "rgba(52, 211, 153, 0.5)" : "rgba(239, 68, 68, 0.5)",
+            borderWidth: "1px",
+            color: syncResult.success ? "rgb(6, 95, 70)" : "rgb(153, 27, 27)"
           }}
         >
-          <FunnelIcon className="h-4 w-4 mr-2" />
-          <span>Filters</span>
-        </button>
-      </div>
+          {syncResult.success ? (
+            <CheckIcon className="h-5 w-5 mr-2" />
+          ) : (
+            <XMarkIcon className="h-5 w-5 mr-2" />
+          )}
+          <span>{syncResult.message}</span>
+        </div>
+      )}
 
       {/* Filters */}
       {showFilters && (

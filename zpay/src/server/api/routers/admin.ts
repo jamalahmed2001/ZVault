@@ -117,6 +117,7 @@ export const adminRouter = createTRPCRouter({
                 name: true,
                 isActive: true,
                 createdAt: true,
+                transactionFee: true,
               },
             },
             webhookConfig: {
@@ -1282,4 +1283,312 @@ export const adminRouter = createTRPCRouter({
         });
       }
     }),
+
+  // Update API Key Fee
+  updateApiKeyFee: adminProcedure
+  .input(
+    z.object({
+      id: z.string(),
+      transactionFee: z.number().min(0).max(100),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    try {
+      // Check if the API key exists
+      const apiKey = await ctx.db.apiKey.findUnique({
+        where: {
+          id: input.id,
+        },
+      });
+      
+      if (!apiKey) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "API key not found",
+        });
+      }
+      
+      // Update the API key's transaction fee
+      const updatedApiKey = await ctx.db.apiKey.update({
+        where: { id: input.id },
+        data: { transactionFee: input.transactionFee },
+      });
+      
+      return { success: true, apiKey: updatedApiKey };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      
+      console.error("Failed to update API key fee:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to update API key fee",
+      });
+    }
+  }),
+
+  // Create API Key for User
+  createApiKey: adminProcedure
+  .input(
+    z.object({
+      userId: z.string(),
+      name: z.string().optional(),
+      transactionFee: z.number().min(0).max(100).default(2.5),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    try {
+      // Check if user exists
+      const user = await ctx.db.user.findUnique({
+        where: { id: input.userId },
+      });
+      
+      if (!user) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "User not found",
+        });
+      }
+      
+      // Generate a random API key with prefix
+      const apiKeyPrefix = "zv_live_";
+      const randomPart = Math.random().toString(36).substring(2, 15) + 
+                       Math.random().toString(36).substring(2, 15);
+      const apiKey = apiKeyPrefix + randomPart;
+      
+      // Create API key for the user
+      const createdApiKey = await ctx.db.apiKey.create({
+        data: {
+          key: apiKey,
+          name: input.name || "Admin Generated API Key",
+          userId: input.userId,
+          transactionFee: input.transactionFee,
+        },
+      });
+      
+      return { 
+        success: true, 
+        apiKey: createdApiKey 
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      
+      console.error("Failed to create API key for user:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to create API key for user",
+      });
+    }
+  }),
+
+  // Get All API Keys
+  getAllApiKeys: adminProcedure
+  .input(
+    z.object({
+      page: z.number().min(1).default(1),
+      limit: z.number().min(1).max(100).default(50),
+      userId: z.string().optional(),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    try {
+      const where = input.userId ? { userId: input.userId } : {};
+      
+      // Count total API keys
+      const totalCount = await ctx.db.apiKey.count({ where });
+      
+      // Calculate pagination
+      const skip = (input.page - 1) * input.limit;
+      const totalPages = Math.ceil(totalCount / input.limit);
+      
+      // Get API keys with user information
+      const apiKeys = await ctx.db.apiKey.findMany({
+        where,
+        skip,
+        take: input.limit,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+              first_name: true,
+              last_name: true,
+            },
+          },
+        },
+      });
+      
+      return {
+        apiKeys,
+        pagination: {
+          totalCount,
+          page: input.page,
+          limit: input.limit,
+          totalPages,
+        },
+      };
+    } catch (error) {
+      console.error("Failed to fetch API keys:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to fetch API keys",
+      });
+    }
+  }),
+
+  // Get API Key Details
+  getApiKeyDetails: adminProcedure
+  .input(
+    z.object({
+      id: z.string(),
+    }),
+  )
+  .query(async ({ ctx, input }) => {
+    try {
+      const apiKey = await ctx.db.apiKey.findUnique({
+        where: { id: input.id },
+        include: {
+          user: {
+            select: {
+              id: true,
+              email: true,
+              username: true,
+              first_name: true,
+              last_name: true,
+            },
+          },
+          Transaction: {
+            take: 10,
+            orderBy: { createdAt: "desc" },
+            select: {
+              id: true,
+              amount: true,
+              status: true,
+              createdAt: true,
+              fee: true,
+            },
+          },
+        },
+      });
+      
+      if (!apiKey) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "API key not found",
+        });
+      }
+      
+      // Get transaction stats
+      const stats = {
+        totalTransactions: await ctx.db.transaction.count({
+          where: { apiKeyId: input.id },
+        }),
+        successfulTransactions: await ctx.db.transaction.count({
+          where: { apiKeyId: input.id, status: "COMPLETED" },
+        }),
+        totalProcessed: await ctx.db.transaction.aggregate({
+          where: { apiKeyId: input.id, status: "COMPLETED" },
+          _sum: { amount: true },
+        }),
+        totalFees: await ctx.db.transaction.aggregate({
+          where: { apiKeyId: input.id, status: "COMPLETED" },
+          _sum: { fee: true },
+        }),
+      };
+      
+      return {
+        apiKey,
+        stats,
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      
+      console.error("Failed to fetch API key details:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to fetch API key details",
+      });
+    }
+  }),
+
+  // Toggle API Key Status
+  toggleApiKeyStatus: adminProcedure
+  .input(
+    z.object({
+      id: z.string(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    try {
+      const apiKey = await ctx.db.apiKey.findUnique({
+        where: { id: input.id },
+        select: { isActive: true },
+      });
+      
+      if (!apiKey) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "API key not found",
+        });
+      }
+      
+      // Toggle the active status
+      const updatedApiKey = await ctx.db.apiKey.update({
+        where: { id: input.id },
+        data: { isActive: !apiKey.isActive },
+      });
+      
+      return { 
+        success: true, 
+        isActive: updatedApiKey.isActive 
+      };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      
+      console.error("Failed to toggle API key status:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to toggle API key status",
+      });
+    }
+  }),
+
+  // Delete API Key
+  deleteApiKey: adminProcedure
+  .input(
+    z.object({
+      id: z.string(),
+    }),
+  )
+  .mutation(async ({ ctx, input }) => {
+    try {
+      // Check if API key exists
+      const apiKey = await ctx.db.apiKey.findUnique({
+        where: { id: input.id },
+      });
+      
+      if (!apiKey) {
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: "API key not found",
+        });
+      }
+      
+      // Delete API key
+      await ctx.db.apiKey.delete({
+        where: { id: input.id },
+      });
+      
+      return { success: true };
+    } catch (error) {
+      if (error instanceof TRPCError) throw error;
+      
+      console.error("Failed to delete API key:", error);
+      throw new TRPCError({
+        code: "INTERNAL_SERVER_ERROR",
+        message: error instanceof Error ? error.message : "Failed to delete API key",
+      });
+    }
+  }),
 }); 
