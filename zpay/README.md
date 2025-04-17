@@ -10,7 +10,7 @@ We then generate an api key for them to make api calls to the backend payment se
 TODO:
 
 KYC KYB KYT AML
-
+p
 pub priv key encruyption
-variable fee for promo  
+WEbhok secrets 
 manual txid verification

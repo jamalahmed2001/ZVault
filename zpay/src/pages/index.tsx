@@ -60,14 +60,14 @@ export default function Home() {
         <title>ZVault ZPay | Truly Private Zcash Payment Processing</title>
         <meta name="description" content="Experience the future of secure and private crypto payments with ZPay by ZVault. Powered by Zcash for unmatched privacy. Simple integration, instant payouts." />
         <link rel="icon" href="/favicon.ico" />
-        <link rel="canonical" href="https://yourdomain.com" /> {/* Replace with your actual domain */}
+        <link rel="canonical" href="https://z-vault.vercel.app" /> {/* Replace with your actual domain */}
 
         {/* --- Open Graph Meta Tags (for Facebook, LinkedIn, etc.) --- */}
         <meta property="og:title" content="ZVault ZPay | Truly Private Zcash Payment Processing" />
         <meta property="og:description" content="Secure, private crypto payments powered by Zcash. Simple setup, instant payouts." />
         <meta property="og:type" content="website" />
-        <meta property="og:url" content="https://yourdomain.com" /> {/* Replace with your actual domain */}
-        <meta property="og:image" content="https://yourdomain.com/og-image.png" /> {/* Replace with your OG image URL */}
+        <meta property="og:url" content="https://z-vault.vercel.app" /> {/* Replace with your actual domain */}
+        <meta property="og:image" content="https://z-vault.vercel.app/og-image.png" /> {/* Replace with your OG image URL */}
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
 
@@ -75,7 +75,7 @@ export default function Home() {
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="ZVault ZPay | Truly Private Zcash Payment Processing" />
         <meta name="twitter:description" content="Secure, private crypto payments powered by Zcash. Simple setup, instant payouts." />
-        <meta name="twitter:image" content="https://yourdomain.com/twitter-image.png" /> {/* Replace with your Twitter image URL */}
+        <meta name="twitter:image" content="https://z-vault.vercel.app/twitter-image.png" /> {/* Replace with your Twitter image URL */}
         {/* Optional: <meta name="twitter:site" content="@YourTwitterHandle" /> */}
         {/* Optional: <meta name="twitter:creator" content="@CreatorTwitterHandle" /> */}
 
@@ -315,21 +315,12 @@ export default function Home() {
                 </div>
               </motion.div>
               <motion.div className="lg:w-1/2 relative h-64 lg:h-auto" variants={fadeInUp} transition={{ delay: 0.2 }}>
-                {/* Enhanced visualization */}
-                <div className="aspect-video rounded-xl shadow-lg flex items-center justify-center p-8" 
-                  style={{ 
-                    background: "linear-gradient(135deg, rgba(10,25,48,0.7), rgba(26,42,58,0.7))",
-                    borderColor: "var(--color-accent)", 
-                    borderWidth: "1px" 
-                  }}>
-                  <div className="text-center">
-                    <div className="flex justify-center mb-4">
-                      <ShieldCheckIcon className="h-12 w-12" style={{ color: "var(--color-accent)" }} />
-                    </div>
-                    <p className="font-medium text-lg" style={{ color: "var(--color-accent)" }}>Shielded Transaction Visualization</p>
-                    <p className="mt-2 text-sm" style={{ color: "var(--color-foreground)" }}>Your financial data protected by zero-knowledge cryptography</p>
-                  </div>
-                </div>
+                <img
+                  src="/visual.png"
+                  alt="ZPay Payment Flow Visualization"
+                  className="w-full h-auto rounded-xl shadow-lg"
+                  style={{ border: "1px solid var(--color-accent)" }}
+                />
               </motion.div>
             </div>
           </div>
