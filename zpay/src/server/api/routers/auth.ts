@@ -251,15 +251,28 @@ export const authRouter = createTRPCRouter({
       z.object({
         name: z.string().optional(),
         transactionFee: z.number().min(0).max(100).default(2.5),
+        isLiveKey: z.boolean().default(false),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       try {
-        // Generate a random API key with prefix
-        const apiKeyPrefix = "zv_test_";
-        const randomPart = Math.random().toString(36).substring(2, 15) + 
-                          Math.random().toString(36).substring(2, 15);
+        // Determine key prefix based on whether it's a live or test key
+        const apiKeyPrefix = input.isLiveKey ? "zv_live_" : "zv_test_";
+        
+        // Generate a cryptographically secure random API key using high entropy
+        // Using 24 bytes (192 bits) of entropy for strong security
+        const randomBytes = crypto.randomBytes(24);
+        
+        // Convert to URL-safe base64 string (removing padding)
+        const randomPart = randomBytes.toString('base64url');
+        
+        // Create the final API key with prefix
         const apiKey = apiKeyPrefix + randomPart;
+        
+        // Validate the generated key meets minimum security requirements
+        if (apiKey.length < 38) { // prefix (8) + at least 30 chars from base64url encoding
+          throw new Error("Generated API key does not meet minimum security requirements");
+        }
         
         // Save to database with transaction fee
         const savedKey = await ctx.db.apiKey.create({
@@ -599,10 +612,23 @@ export const authRouter = createTRPCRouter({
   generateWebhookSecret: protectedProcedure
     .mutation(async () => {
       try {
-        // Generate a random webhook secret with prefix
+        // Generate a highly secure webhook secret with prefix
+        // Using 32 bytes (256 bits) of entropy for strong security
         const secretPrefix = "whsec_";
-        const randomPart = crypto.randomBytes(16).toString('hex');
+        
+        // Generate cryptographically secure random bytes
+        const randomBytes = crypto.randomBytes(32);
+        
+        // Convert to URL-safe base64 string (removing padding)
+        const randomPart = randomBytes.toString('base64url');
+        
+        // Create the final webhook secret
         const secret = secretPrefix + randomPart;
+        
+        // Validate the generated secret meets minimum security requirements
+        if (secret.length < 45) { // prefix (6) + at least 39 chars from base64url encoding
+          throw new Error("Generated webhook secret does not meet minimum security requirements");
+        }
         
         return { 
           success: true,

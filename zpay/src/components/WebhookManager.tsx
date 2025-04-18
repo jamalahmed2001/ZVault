@@ -1,5 +1,5 @@
-import { useState, useEffect } from "react";
-import { ClipboardIcon, ArrowPathIcon, CheckIcon, GlobeAltIcon, BellAlertIcon } from '@heroicons/react/24/outline';
+import { useState, useEffect, useRef } from "react";
+import { ClipboardIcon, ArrowPathIcon, CheckIcon, GlobeAltIcon, BellAlertIcon, ShieldCheckIcon } from '@heroicons/react/24/outline';
 import { api } from "@/utils/api";
 import { useSession } from "next-auth/react";
 
@@ -36,6 +36,9 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
   const [isGenerating, setIsGenerating] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState<boolean | null>(null);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [secretVisible, setSecretVisible] = useState(false);
+  const clearClipboardTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [secretStrength, setSecretStrength] = useState<'weak' | 'medium' | 'strong'>('medium');
   
   // Test webhook state
   const [invoiceId, setInvoiceId] = useState("477");
@@ -131,12 +134,46 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
     }
   }, [initialApiKey]);
 
-  // Copy webhook secret to clipboard
+  // Evaluate webhook secret strength
+  useEffect(() => {
+    if (!webhookSecret || webhookSecret.length < 20) {
+      setSecretStrength('weak');
+    } else if (webhookSecret.length < 40) {
+      setSecretStrength('medium');
+    } else {
+      setSecretStrength('strong');
+    }
+  }, [webhookSecret]);
+
+  // Copy webhook secret to clipboard securely and clear after use
   const copyWebhookSecret = () => {
+    // Copy to clipboard
     navigator.clipboard.writeText(webhookSecret);
     setCopied(true);
+    
+    // Clear timeout if it exists
+    if (clearClipboardTimeoutRef.current) {
+      clearTimeout(clearClipboardTimeoutRef.current);
+    }
+    
+    // Set visual indication timeout
     setTimeout(() => setCopied(false), 2000);
+    
+    // Clear clipboard after 60 seconds for security
+    clearClipboardTimeoutRef.current = setTimeout(() => {
+      navigator.clipboard.writeText('');
+      console.log('Clipboard cleared for security');
+    }, 60000);
   };
+  
+  // Clean up clipboard timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clearClipboardTimeoutRef.current) {
+        clearTimeout(clearClipboardTimeoutRef.current);
+      }
+    };
+  }, []);
   
   // Generate new webhook secret
   const generateSecret = () => {
@@ -144,8 +181,9 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
     generateSecretMutation.mutate();
   };
   
-  // Save webhook configuration
+  // Save webhook configuration with validation
   const saveWebhookConfig = () => {
+    // Validate webhook URL
     if (!webhookUrl) {
       setSaveSuccess(false);
       setSaveMessage("Webhook URL is required");
@@ -154,6 +192,41 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
         setSaveMessage(null);
       }, 3000);
       return;
+    }
+    
+    // Validate webhook URL format
+    try {
+      new URL(webhookUrl);
+    } catch (e) {
+      setSaveSuccess(false);
+      setSaveMessage("Invalid webhook URL format");
+      setTimeout(() => {
+        setSaveSuccess(null);
+        setSaveMessage(null);
+      }, 3000);
+      return;
+    }
+    
+    // Validate webhook secret
+    if (!webhookSecret || webhookSecret.length < 20) {
+      setSaveSuccess(false);
+      setSaveMessage("Webhook secret must be at least 20 characters long");
+      setTimeout(() => {
+        setSaveSuccess(null);
+        setSaveMessage(null);
+      }, 3000);
+      return;
+    }
+    
+    // Prefer HTTPS for production
+    if (webhookUrl.startsWith('http:') && !webhookUrl.includes('localhost') && !webhookUrl.includes('127.0.0.1')) {
+      setSaveSuccess(false);
+      setSaveMessage("Warning: Using HTTP for webhooks is not secure. Please use HTTPS for production environments.");
+      setTimeout(() => {
+        setSaveSuccess(null);
+        setSaveMessage(null);
+      }, 5000);
+      // Continue saving despite the warning
     }
     
     saveWebhookMutation.mutate({
@@ -263,6 +336,22 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
       <div className="flex items-center mb-6">
         <GlobeAltIcon className="h-8 w-8 mr-4" style={{ color: "var(--color-accent)" }} />
         <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>Webhook Configuration</h2>
+      </div>
+      
+      <div className="mb-6 p-4 rounded-lg border" style={{ backgroundColor: "rgba(7, 18, 36, 0.4)", borderColor: "var(--color-accent)", borderWidth: "1px" }}>
+        <div className="flex items-start">
+          <ShieldCheckIcon className="h-5 w-5 mr-2 mt-0.5" style={{ color: "var(--color-accent)" }} />
+          <div>
+            <p className="font-medium" style={{ color: "var(--color-foreground)" }}>Security Best Practices</p>
+            <ul className="mt-2 text-sm list-disc pl-5" style={{ color: "var(--color-foreground-alt)" }}>
+              <li>Always use HTTPS for production webhook endpoints</li>
+              <li>Keep your webhook secret private and secure</li>
+              <li>Validate webhook signatures on your server to prevent spoofing attacks</li>
+              <li>Implement timeout handling for webhook requests</li>
+              <li>Set up proper error logging for webhook failures</li>
+            </ul>
+          </div>
+        </div>
       </div>
       
       <p className="mb-6" style={{ color: "var(--color-foreground-alt)" }}>
@@ -398,7 +487,7 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
           </div>
           <div className="relative">
             <input
-              type="password"
+              type={secretVisible ? "text" : "password"}
               id="webhookSecret"
               value={webhookSecret}
               readOnly
@@ -410,20 +499,60 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
                 color: "var(--color-foreground)"
               }}
             />
-            <button 
-              onClick={copyWebhookSecret}
-              className="absolute right-3 top-1/2 transform -translate-y-1/2"
-              style={{ color: "var(--color-accent)" }}
-            >
-              {copied ? (
-                <CheckIcon className="h-5 w-5" />
-              ) : (
-                <ClipboardIcon className="h-5 w-5" />
-              )}
-            </button>
+            <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-2">
+              <button 
+                onClick={() => setSecretVisible(!secretVisible)}
+                className="p-1 rounded-full"
+                style={{ color: "var(--color-foreground-alt)" }}
+                title={secretVisible ? "Hide Secret" : "Show Secret"}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                  {secretVisible ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+                  )}
+                </svg>
+              </button>
+              <button 
+                onClick={copyWebhookSecret}
+                className="p-1 rounded-full"
+                style={{ color: "var(--color-accent)" }}
+                title="Copy to clipboard (will be cleared after 60 seconds)"
+              >
+                {copied ? (
+                  <CheckIcon className="h-5 w-5" />
+                ) : (
+                  <ClipboardIcon className="h-5 w-5" />
+                )}
+              </button>
+            </div>
           </div>
+          
+          {/* Secret strength indicator */}
+          <div className="mt-2 flex items-center">
+            <div className="flex-1 h-1 mr-2 rounded-full overflow-hidden bg-gray-300">
+              <div 
+                className="h-full rounded-full" 
+                style={{ 
+                  width: secretStrength === 'weak' ? '33%' : secretStrength === 'medium' ? '66%' : '100%',
+                  backgroundColor: secretStrength === 'weak' ? 'var(--color-error)' : 
+                                  secretStrength === 'medium' ? 'var(--color-warning)' : 
+                                  'var(--color-success)'
+                }}
+              ></div>
+            </div>
+            <span className="text-xs" style={{ 
+              color: secretStrength === 'weak' ? 'var(--color-error)' : 
+                    secretStrength === 'medium' ? 'var(--color-warning)' : 
+                    'var(--color-success)' 
+            }}>
+              {secretStrength === 'weak' ? 'Weak' : secretStrength === 'medium' ? 'Medium' : 'Strong'}
+            </span>
+          </div>
+          
           <p className="mt-2 text-xs" style={{ color: "var(--color-foreground-alt)" }}>
-            This secret is used to verify that webhook events came from ZPay.
+            This secure secret is used to verify that webhook events came from ZPay. Keep it confidential and use it to validate webhook signatures.
           </p>
         </div>
         
@@ -573,22 +702,6 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
               </div>
             </div>
             
-       
-            {/* {testWebhookResult.response && (
-              <div className="rounded-lg p-4" style={{ 
-                backgroundColor: "var(--color-surface)", 
-                borderColor: "var(--color-border)", 
-                borderWidth: "1px"
-              }}>
-                <h4 className="font-medium mb-2" style={{ color: "var(--color-foreground)" }}>Response Details</h4>
-                <div className="p-3 rounded-lg overflow-x-auto" style={{ backgroundColor: "rgba(49, 55, 69, 0.5)" }}>
-                  <pre className="text-xs" style={{ color: "var(--color-foreground)" }}>
-                    {JSON.stringify(testWebhookResult.response, null, 2)}
-                  </pre>
-                </div>
-              </div>
-            )} */}
-            
             {testWebhookResult?.response?.curl_command && (
               <div className="rounded-lg p-4" style={{ 
                 backgroundColor: "var(--color-surface)", 
@@ -628,7 +741,6 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
                   Run this command in your terminal to test the webhook. It will return the HTTP status code from your server.
                 </p>
               </div>
-
             )}
                  {testWebhookResult.payload && (
               <div className="rounded-lg p-4" style={{ 
@@ -663,6 +775,8 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
           </div>
         )}
       </div>
+      
+
     </div>
   );
 } 

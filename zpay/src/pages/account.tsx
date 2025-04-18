@@ -1,8 +1,19 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useSession } from "next-auth/react";
 import Head from "next/head";
 import { motion } from "framer-motion";
-import { ArrowPathIcon, CheckIcon, KeyIcon, GlobeAltIcon, UserCircleIcon, CogIcon, CurrencyDollarIcon } from '@heroicons/react/24/outline';
+import { 
+  ArrowPathIcon, 
+  CheckIcon, 
+  KeyIcon, 
+  GlobeAltIcon, 
+  UserCircleIcon, 
+  CogIcon, 
+  CurrencyDollarIcon,
+  ChevronDownIcon,
+  EyeIcon,
+  EyeSlashIcon
+} from '@heroicons/react/24/outline';
 import ApiKeyManager from "@/components/ApiKeyManager";
 import WebhookManager from "@/components/WebhookManager";
 import TransactionLog from "@/components/TransactionLog";
@@ -29,6 +40,9 @@ export default function Account() {
   const { data: session } = useSession();
   const utils = api.useContext();
   
+  // Section visibility state
+  const [visibleSection, setVisibleSection] = useState<string | null>("api-keys");
+  
   // Test webhook state
   const [invoiceId, setInvoiceId] = useState("477");
   const [userId, setUserId] = useState("1");
@@ -43,8 +57,10 @@ export default function Account() {
   // User profile settings
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [zecAddress, setZecAddress] = useState("zs1z7rejlpsa98s2rrrfkwmaxu53e4ue0ulcrw0h4x5g8jl04tak0d3mm47vdtahatqrlkngh9sly");
+  const [addressVisible, setAddressVisible] = useState(false);
   const [saveSettingsSuccess, setSaveSettingsSuccess] = useState<boolean | null>(null);
   const [saveSettingsMessage, setSaveSettingsMessage] = useState<string | null>(null);
+  const clearClipboardTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   
   // API key state
   const [selectedApiKey, setSelectedApiKey] = useState<string>("");
@@ -85,10 +101,40 @@ export default function Account() {
     }
   }, [userProfile.data]);
 
+  // Toggle section visibility
+  const toggleSection = (sectionId: string) => {
+    setVisibleSection(visibleSection === sectionId ? null : sectionId);
+  };
+
   // Update API key when selected
   const handleApiKeySelect = (apiKey: string) => {
     setSelectedApiKey(apiKey);
   };
+
+  // Copy address to clipboard securely
+  const copyAddress = () => {
+    navigator.clipboard.writeText(zecAddress);
+    
+    // Clear timeout if it exists
+    if (clearClipboardTimeoutRef.current) {
+      clearTimeout(clearClipboardTimeoutRef.current);
+    }
+    
+    // Clear clipboard after 60 seconds for security
+    clearClipboardTimeoutRef.current = setTimeout(() => {
+      navigator.clipboard.writeText('');
+      console.log('Clipboard cleared for security');
+    }, 60000);
+  };
+  
+  // Clean up clipboard timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (clearClipboardTimeoutRef.current) {
+        clearTimeout(clearClipboardTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Test webhook
   const testWebhook = async () => {
@@ -181,6 +227,143 @@ export default function Account() {
     });
   };
 
+  // Mask address for display
+  const maskAddress = (address: string) => {
+    if (!address) return "";
+    const firstChars = address.substring(0, 8);
+    const lastChars = address.substring(address.length - 8);
+    return `${firstChars}...${lastChars}`;
+  };
+
+  // Generate section content
+  const renderSectionContent = (sectionId: string) => {
+    if (visibleSection !== sectionId) return null;
+    
+    switch (sectionId) {
+      case "api-keys":
+        return <ApiKeyManager initialApiKey="" onApiKeySelect={handleApiKeySelect} />;
+      case "webhooks":
+        return (
+          <WebhookManager 
+            initialApiKey={selectedApiKey}
+            onWebhookSelect={(url, secret) => {
+              // Handle selected webhook if needed
+            }} 
+          />
+        );
+      case "transactions":
+        return <TransactionLog initialApiKey={selectedApiKey} />;
+      case "profile":
+        return (
+          <div className="space-y-8">
+            <div>
+              <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Payout Settings</h3>
+              <div>
+                <label htmlFor="zecAddress" className="block mb-2" style={{ color: "var(--color-foreground)" }}>
+                  Zcash Shielded Address (zs...)
+                </label>
+                <div className="relative">
+                  <input
+                    type={addressVisible ? "text" : "password"}
+                    id="zecAddress"
+                    value={zecAddress}
+                    onChange={(e) => setZecAddress(e.target.value)}
+                    className="w-full px-4 py-3 rounded-lg focus:outline-none"
+                    style={{ 
+                      backgroundColor: "var(--color-surface)", 
+                      borderColor: "var(--color-border)", 
+                      borderWidth: "1px",
+                      color: "var(--color-foreground)"
+                    }}
+                    placeholder="zs1..."
+                  />
+                  <div className="absolute right-3 top-1/2 transform -translate-y-1/2 flex space-x-2">
+                    <button 
+                      onClick={() => setAddressVisible(!addressVisible)}
+                      className="p-1 rounded-full"
+                      style={{ color: "var(--color-foreground-alt)" }}
+                      title={addressVisible ? "Hide Address" : "Show Address"}
+                    >
+                      {addressVisible ? <EyeSlashIcon className="h-5 w-5" /> : <EyeIcon className="h-5 w-5" />}
+                    </button>
+                    <button 
+                      onClick={copyAddress}
+                      className="p-1 rounded-full"
+                      style={{ color: "var(--color-accent)" }}
+                      title="Copy to clipboard (will be cleared after 60 seconds)"
+                    >
+                      <CheckIcon className="h-5 w-5" />
+                    </button>
+                  </div>
+                </div>
+                <p className="mt-2 text-sm" style={{ color: "var(--color-foreground-alt)" }}>
+                  All payments will be sent directly to this shielded address. Keep this address private for security.
+                </p>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Notification Preferences</h3>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  id="notifications"
+                  checked={notificationsEnabled}
+                  onChange={() => setNotificationsEnabled(!notificationsEnabled)}
+                  className="h-5 w-5 rounded focus:ring-2"
+                  style={{ 
+                    accentColor: "var(--color-accent)",
+                    borderColor: "var(--color-border)" 
+                  }}
+                />
+                <label htmlFor="notifications" className="ml-3" style={{ color: "var(--color-foreground)" }}>
+                  Email me when payments are received
+                </label>
+              </div>
+            </div>
+            
+            {saveSettingsMessage && (
+              <div className={`p-4 rounded-lg ${saveSettingsSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
+                <div className="flex items-start">
+                  {saveSettingsSuccess ? (
+                    <CheckIcon className="h-5 w-5 mr-2 mt-0.5" />
+                  ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 mr-2 mt-0.5">
+                      <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clipRule="evenodd" />
+                    </svg>
+                  )}
+                  <p>{saveSettingsMessage}</p>
+                </div>
+              </div>
+            )}
+            
+            <div className="flex justify-end">
+              <button 
+                onClick={saveSettings}
+                disabled={updateUserSettings.isPending}
+                className="px-6 py-3 rounded-lg transition-colors disabled:opacity-50"
+                style={{ 
+                  backgroundColor: "var(--color-primary)",
+                  color: "var(--color-primary-foreground)"
+                }}
+              >
+                {updateUserSettings.isPending ? (
+                  <>
+                    <ArrowPathIcon className="inline h-5 w-5 mr-2 animate-spin" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  <span>Save Settings</span>
+                )}
+              </button>
+            </div>
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <>
       <Head>
@@ -222,30 +405,70 @@ export default function Account() {
                   </div>
                   <div>
                     <p className="font-medium" style={{ color: "var(--color-foreground)" }}>{session?.user?.name || "Account Owner"}</p>
-                    <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>{session?.user?.email || "user@example.com"}</p>
+                    <p className="text-sm truncate max-w-[180px]" style={{ color: "var(--color-foreground-alt)" }}>{session?.user?.email || "user@example.com"}</p>
                   </div>
                 </div>
 
                 <nav className="space-y-2">
-                  <a href="#api-keys" className="flex items-center px-4 py-3 rounded-lg font-medium" style={{ 
-                    backgroundColor: "var(--color-primary)", 
-                    color: "var(--color-primary-foreground)" 
-                  }}>
-                    <KeyIcon className="h-5 w-5 mr-3" />
-                    API Keys
-                  </a>
-                  <a href="#webhooks" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
-                    <GlobeAltIcon className="h-5 w-5 mr-3" />
-                    Webhooks
-                  </a>
-                  <a href="#transactions" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
-                    <CurrencyDollarIcon className="h-5 w-5 mr-3" />
-                    Transactions
-                  </a>
-                  <a href="#profile" className="flex items-center px-4 py-3 rounded-lg" style={{ color: "var(--color-foreground)" }}>
-                    <CogIcon className="h-5 w-5 mr-3" />
-                    Settings
-                  </a>
+                  <button 
+                    onClick={() => toggleSection("api-keys")}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors`}
+                    style={{ 
+                      backgroundColor: visibleSection === "api-keys" ? "var(--color-primary)" : "transparent", 
+                      color: visibleSection === "api-keys" ? "var(--color-primary-foreground)" : "var(--color-foreground)" 
+                    }}
+                  >
+                    <span className="flex items-center">
+                      <KeyIcon className="h-5 w-5 mr-3" />
+                      API Keys
+                    </span>
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${visibleSection === "api-keys" ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  <button 
+                    onClick={() => toggleSection("webhooks")}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors`}
+                    style={{ 
+                      backgroundColor: visibleSection === "webhooks" ? "var(--color-primary)" : "transparent", 
+                      color: visibleSection === "webhooks" ? "var(--color-primary-foreground)" : "var(--color-foreground)" 
+                    }}
+                  >
+                    <span className="flex items-center">
+                      <GlobeAltIcon className="h-5 w-5 mr-3" />
+                      Webhooks
+                    </span>
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${visibleSection === "webhooks" ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  <button 
+                    onClick={() => toggleSection("transactions")}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors`}
+                    style={{ 
+                      backgroundColor: visibleSection === "transactions" ? "var(--color-primary)" : "transparent", 
+                      color: visibleSection === "transactions" ? "var(--color-primary-foreground)" : "var(--color-foreground)" 
+                    }}
+                  >
+                    <span className="flex items-center">
+                      <CurrencyDollarIcon className="h-5 w-5 mr-3" />
+                      Transactions
+                    </span>
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${visibleSection === "transactions" ? 'rotate-180' : ''}`} />
+                  </button>
+                  
+                  <button 
+                    onClick={() => toggleSection("profile")}
+                    className={`w-full flex items-center justify-between px-4 py-3 rounded-lg font-medium transition-colors`}
+                    style={{ 
+                      backgroundColor: visibleSection === "profile" ? "var(--color-primary)" : "transparent", 
+                      color: visibleSection === "profile" ? "var(--color-primary-foreground)" : "var(--color-foreground)" 
+                    }}
+                  >
+                    <span className="flex items-center">
+                      <CogIcon className="h-5 w-5 mr-3" />
+                      Settings
+                    </span>
+                    <ChevronDownIcon className={`h-5 w-5 transition-transform ${visibleSection === "profile" ? 'rotate-180' : ''}`} />
+                  </button>
                 </nav>
               </div>
             </div>
@@ -253,115 +476,28 @@ export default function Account() {
             {/* Main Content */}
             <div className="md:col-span-2 space-y-10">
               {/* API Keys Section */}
-              <section id="api-keys">
-                <ApiKeyManager initialApiKey="" onApiKeySelect={handleApiKeySelect} />
+              <section id="api-keys" className={visibleSection === "api-keys" ? "" : "hidden"}>
+                {renderSectionContent("api-keys")}
               </section>
               
               {/* Webhooks Section */}
-              <section id="webhooks">
-                <WebhookManager 
-                  initialApiKey={selectedApiKey}
-                  onWebhookSelect={(url, secret) => {
-                    // Handle selected webhook if needed
-                  }} 
-                />
+              <section id="webhooks" className={visibleSection === "webhooks" ? "" : "hidden"}>
+                {renderSectionContent("webhooks")}
               </section>
 
               {/* Transactions Section */}
-              <section id="transactions">
-                <TransactionLog initialApiKey={selectedApiKey} />
+              <section id="transactions" className={visibleSection === "transactions" ? "" : "hidden"}>
+                {renderSectionContent("transactions")}
               </section>
               
               {/* Profile Settings Section */}
-              <section id="profile" className="rounded-xl shadow-lg p-8" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
+              <section id="profile" className={`rounded-xl shadow-lg p-8 ${visibleSection === "profile" ? "" : "hidden"}`} style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
                 <div className="flex items-center mb-6">
                   <CogIcon className="h-8 w-8 mr-4" style={{ color: "var(--color-accent)" }} />
                   <h2 className="text-2xl font-bold" style={{ color: "var(--color-foreground)" }}>Account Settings</h2>
                 </div>
                 
-                <div className="space-y-8">
-                  <div>
-                    <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Payout Settings</h3>
-                    <div>
-                      <label htmlFor="zecAddress" className="block mb-2" style={{ color: "var(--color-foreground)" }}>
-                        Zcash Shielded Address (zs...)
-                      </label>
-                      <input
-                        type="text"
-                        id="zecAddress"
-                        value={zecAddress}
-                        onChange={(e) => setZecAddress(e.target.value)}
-                        className="w-full px-4 py-3 rounded-lg focus:outline-none"
-                        style={{ 
-                          backgroundColor: "var(--color-surface)", 
-                          borderColor: "var(--color-border)", 
-                          borderWidth: "1px",
-                          color: "var(--color-foreground)"
-                        }}
-                        placeholder="zs1..."
-                      />
-                      <p className="mt-2 text-sm" style={{ color: "var(--color-foreground-alt)" }}>
-                        All payments will be sent directly to this shielded address.
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Notification Preferences</h3>
-                    <div className="flex items-center">
-                      <input
-                        type="checkbox"
-                        id="notifications"
-                        checked={notificationsEnabled}
-                        onChange={() => setNotificationsEnabled(!notificationsEnabled)}
-                        className="h-5 w-5 rounded focus:ring-2"
-                        style={{ 
-                          accentColor: "var(--color-accent)",
-                          borderColor: "var(--color-border)" 
-                        }}
-                      />
-                      <label htmlFor="notifications" className="ml-3" style={{ color: "var(--color-foreground)" }}>
-                        Email me when payments are received
-                      </label>
-                    </div>
-                  </div>
-                  
-                  {saveSettingsMessage && (
-                    <div className={`p-4 rounded-lg ${saveSettingsSuccess ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`}>
-                      <div className="flex items-start">
-                        {saveSettingsSuccess ? (
-                          <CheckIcon className="h-5 w-5 mr-2 mt-0.5" />
-                        ) : (
-                          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="h-5 w-5 mr-2 mt-0.5">
-                            <path fillRule="evenodd" d="M12 2.25c-5.385 0-9.75 4.365-9.75 9.75s4.365 9.75 9.75 9.75 9.75-4.365 9.75-9.75S17.385 2.25 12 2.25zm-1.72 6.97a.75.75 0 10-1.06 1.06L10.94 12l-1.72 1.72a.75.75 0 101.06 1.06L12 13.06l1.72 1.72a.75.75 0 101.06-1.06L13.06 12l1.72-1.72a.75.75 0 10-1.06-1.06L12 10.94l-1.72-1.72z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                        <p>{saveSettingsMessage}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex justify-end">
-                    <button 
-                      onClick={saveSettings}
-                      disabled={updateUserSettings.isPending}
-                      className="px-6 py-3 rounded-lg transition-colors disabled:opacity-50"
-                      style={{ 
-                        backgroundColor: "var(--color-primary)",
-                        color: "var(--color-primary-foreground)"
-                      }}
-                    >
-                      {updateUserSettings.isPending ? (
-                        <>
-                          <ArrowPathIcon className="inline h-5 w-5 mr-2 animate-spin" />
-                          <span>Saving...</span>
-                        </>
-                      ) : (
-                        <span>Save Settings</span>
-                      )}
-                    </button>
-                  </div>
-                </div>
+                {renderSectionContent("profile")}
               </section>
             </div>
           </div>
