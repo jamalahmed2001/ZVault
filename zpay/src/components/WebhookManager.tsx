@@ -551,6 +551,26 @@ export default function WebhookManager({ initialWebhookUrl, initialWebhookSecret
             </span>
           </div>
           
+          <div className="mt-3 p-3 rounded-lg border border-dashed" style={{ 
+            backgroundColor: "rgba(190, 164, 114, 0.1)", 
+            borderColor: "var(--color-accent)"
+          }}>
+            <div className="flex items-start">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" 
+                className="w-5 h-5 mr-2 mt-0.5" style={{ color: "var(--color-accent)" }}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z" />
+              </svg>
+              <div>
+                <p className="font-medium" style={{ color: "var(--color-foreground)" }}>
+                  Coming Soon
+                </p>
+                <p className="text-sm mt-1" style={{ color: "var(--color-foreground-alt)" }}>
+                  Webhook secret validation is not currently in use but will be implemented soon. Generate and save your secret now to be ready when this feature is activated.
+                </p>
+              </div>
+            </div>
+          </div>
+          
           <p className="mt-2 text-xs" style={{ color: "var(--color-foreground-alt)" }}>
             This secure secret is used to verify that webhook events came from ZPay. Keep it confidential and use it to validate webhook signatures.
           </p>

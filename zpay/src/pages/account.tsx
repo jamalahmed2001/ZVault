@@ -372,7 +372,7 @@ export default function Account() {
       </Head>
 
       <main className="min-h-screen" style={{ backgroundColor: "var(--color-background)", color: "var(--color-foreground)" }}>
-        <div className="container mx-auto px-6 py-12">
+        <div className="container mx-auto px-6 pt-28 pb-12">
           <motion.div 
             className="mb-12"
             initial="initial"
@@ -398,7 +398,7 @@ export default function Account() {
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
             {/* Sidebar Navigation */}
             <div className="md:col-span-1">
-              <div className="sticky top-6 rounded-xl shadow-lg p-6" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
+              <div className="sticky top-20 rounded-xl shadow-lg p-6" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>
                 <div className="flex items-center space-x-3 mb-8 pb-4" style={{ borderBottomColor: "var(--color-border)", borderBottomWidth: "1px" }}>
                   <div className="h-12 w-12 rounded-full flex items-center justify-center" style={{ backgroundColor: "var(--dark-navy-blue)", opacity: 0.3 }}>
                     <UserCircleIcon className="h-8 w-8" style={{ color: "var(--color-foreground)" }} />

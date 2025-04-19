@@ -146,7 +146,7 @@ export default function Home() {
       }}>
         {/* Hero Section */}
         <motion.section
-          className="relative overflow-hidden py-20 md:py-28"
+          className="relative overflow-hidden pt-32 pb-20 md:pt-40 md:pb-28"
           style={{
             background: "var(--gradient-blue-gold)",
             color: "var(--color-primary-foreground)"
@@ -156,6 +156,12 @@ export default function Home() {
         >
           {/* Subtle Background Pattern */}
           <div className="absolute inset-0 opacity-10 bg-crypto-pattern bg-repeat"></div>
+          
+          {/* Abstract shapes */}
+          <div className="absolute top-1/4 right-10 h-40 w-40 rounded-full opacity-20 blur-2xl"
+            style={{ background: "var(--color-accent)" }}></div>
+          <div className="absolute bottom-1/3 left-10 h-32 w-32 rounded-full opacity-15 blur-2xl"
+            style={{ background: "var(--color-primary)" }}></div>
 
           <div className="container mx-auto px-6 relative z-10">
             <motion.div
@@ -167,7 +173,7 @@ export default function Home() {
                 style={{
                   backgroundColor: "var(--color-accent)",
                   color: "var(--color-accent-foreground)",
-                  opacity: "0.9"
+                  boxShadow: "0 4px 14px rgba(212,175,55,0.25)"
                 }}
                 variants={fadeInUp}
               >
@@ -182,7 +188,10 @@ export default function Home() {
               </motion.h1>
               <motion.p
                 className="mb-12 text-lg md:text-xl lg:text-2xl mx-auto max-w-3xl"
-                style={{ color: "var(--color-foreground)" }} // Adjusted color for contrast on gradient
+                style={{ 
+                  color: "var(--color-foreground)",
+                  textShadow: "0 1px 2px rgba(0,0,0,0.1)" 
+                }}
                 variants={fadeInUp}
               >
                 Leverage the power of Zcash for truly private, secure, and seamless payment processing.
@@ -194,7 +203,7 @@ export default function Home() {
               >
                 <button
                   onClick={sessionData ? () => void signOut() : () => void signIn()}
-                  className="transform rounded-lg px-8 py-4 text-lg font-semibold shadow-md transition duration-300 ease-in-out hover:shadow-xl hover:-translate-y-1"
+                  className="transform rounded-lg px-8 py-4 text-lg font-semibold shadow-md transition duration-300 ease-in-out hover:shadow-lg hover:shadow-[var(--color-accent-transparent)] hover:-translate-y-1"
                   style={{
                     backgroundColor: "var(--color-accent)",
                     color: "var(--color-accent-foreground)"
@@ -212,15 +221,15 @@ export default function Home() {
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.backgroundColor = "var(--color-accent)";
-                    e.currentTarget.style.color = "var(--color-accent-foreground)"; // Ensure text color changes too
+                    e.currentTarget.style.color = "var(--color-accent-foreground)";
                     e.currentTarget.style.borderColor = "var(--color-accent)";
-                    e.currentTarget.style.opacity = "0.9";
+                    e.currentTarget.style.boxShadow = "0 4px 14px rgba(212,175,55,0.25)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.backgroundColor = "rgba(255, 255, 255, 0.1)";
                     e.currentTarget.style.color = "var(--color-primary-foreground)";
                     e.currentTarget.style.borderColor = "var(--color-border)";
-                    e.currentTarget.style.opacity = "1";
+                    e.currentTarget.style.boxShadow = "none";
                   }}
                 >
                   Explore Features
