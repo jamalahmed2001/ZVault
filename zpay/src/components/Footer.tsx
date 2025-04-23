@@ -10,7 +10,7 @@ const Footer = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Company Info */}
           <div className="md:col-span-1">
-            <h3 className="text-2xl font-bold text-[var(--color-foreground)]">ZVault <span className="text-[var(--color-accent)]">ZPay</span></h3>
+            <h3 className="text-2xl font-bold text-[var(--color-foreground)]">ZVault <span className="text-[var(--color-accent)]">AutoShield</span></h3>
             <p className="mt-3 text-sm text-[var(--color-foreground-alt)]">
               Shielding your transactions, simplifying your business.
             </p>
@@ -35,7 +35,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li><Link href="/about" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">About</Link></li>
               <li><Link href="/contact" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Contact</Link></li>
-              <li><Link href="/blog" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Blog</Link></li>
+              {/* <li><Link href="/blog" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Blog</Link></li> */}
               {/* <li><Link href="/careers" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Careers</Link></li> */}
             </ul>
           </div>
@@ -45,7 +45,7 @@ const Footer = () => {
             <ul className="space-y-2">
               <li><Link href="/privacy" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Privacy Policy</Link></li>
               <li><Link href="/terms" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Terms of Service</Link></li>
-              <li><Link href="/compliance" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Compliance</Link></li>
+              {/* <li><Link href="/compliance" className="text-[var(--color-foreground-alt)] hover:text-[var(--color-accent)] transition">Compliance</Link></li> */}
             </ul>
           </div>
         </div>

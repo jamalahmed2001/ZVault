@@ -97,7 +97,7 @@ const Navbar = () => {
             <div className="flex items-center">
               <ShieldCheckIcon className="h-7 w-7 mr-2 text-[var(--color-accent)]" />
               <h1 className="text-2xl font-bold">
-                ZVault <span className="text-[var(--color-accent)]">ZPay</span>
+                ZVault <span className="text-[var(--color-accent)]">AutoShield</span>
               </h1>
             </div>
           </Link>

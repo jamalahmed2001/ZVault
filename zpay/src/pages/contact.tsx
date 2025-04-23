@@ -90,13 +90,13 @@ export default function Contact() {
   return (
     <>
       <Head>
-        <title>Contact ZVault ZPay | Get Support & Connect With Our Team</title>
-        <meta name="description" content="Have questions about ZPay? Contact our team for support, partnership opportunities, or general inquiries. We're here to help with your private payment needs." />
+        <title>Contact ZVault Automation | Get Support & Connect With Our Team</title>
+        <meta name="description" content="Have questions about ZVault Automation? Contact our team for support, partnership opportunities, or general inquiries. We're here to help with your private automation needs." />
         <link rel="canonical" href="https://yourdomain.com/contact" />
         
         {/* Open Graph Meta Tags */}
-        <meta property="og:title" content="Contact ZVault ZPay | Get Support & Connect With Our Team" />
-        <meta property="og:description" content="Have questions about ZPay? Contact our team for support, partnership opportunities, or general inquiries. We're here to help with your private payment needs." />
+        <meta property="og:title" content="Contact ZVault Automation | Get Support & Connect With Our Team" />
+        <meta property="og:description" content="Have questions about ZVault Automation? Contact our team for support, partnership opportunities, or general inquiries. We're here to help with your private automation needs." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://yourdomain.com/contact" />
         <meta property="og:image" content="https://yourdomain.com/og-image.png" />
@@ -148,7 +148,7 @@ export default function Contact() {
                 variants={fadeInUp}
               >
                 Have questions or need support? Our team is ready to help you navigate
-                the world of private payments.
+                the world of private automation.
               </motion.p>
             </motion.div>
           </div>
@@ -441,13 +441,13 @@ export default function Contact() {
                 className="mb-8 text-3xl font-bold md:text-4xl lg:text-5xl text-[var(--color-foreground-dark)]" 
                 variants={fadeInUp}
               >
-                Ready to Transform Your Payment Experience?
+                Ready to Transform Your Automation Experience?
               </motion.h2>
               <motion.p 
                 className="mb-12 text-lg md:text-xl mx-auto max-w-2xl text-[var(--color-foreground-dark-alt)]" 
                 variants={fadeInUp}
               >
-                Join thousands of businesses already using ZPay for private, secure transactions.
+                Join thousands of businesses already using ZVault for private, secure automation.
               </motion.p>
               <Link
                 href="/"

@@ -180,14 +180,14 @@ export default function Documentation() {
   return (
     <>
       <Head>
-        <title>Developer Documentation | ZVault ZPay</title>
-        <meta name="description" content="Comprehensive developer documentation for integrating ZVault ZPay's private payment processing into your applications using our simple and powerful API." />
+        <title>Developer Documentation | ZVault Automation</title>
+        <meta name="description" content="Comprehensive developer documentation for integrating ZVault's privacy-focused automation infrastructure into your applications using our simple and powerful API." />
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://yourdomain.com/docs" />
         
         {/* Open Graph Meta Tags */}
-        <meta property="og:title" content="Developer Documentation | ZVault ZPay" />
-        <meta property="og:description" content="Comprehensive documentation for integrating ZPay's private payment processing into your applications." />
+        <meta property="og:title" content="Developer Documentation | ZVault Automation" />
+        <meta property="og:description" content="Comprehensive documentation for integrating ZVault's privacy-focused automation infrastructure into your applications." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://yourdomain.com/docs" />
         <meta property="og:image" content="https://yourdomain.com/og-image.png" />
@@ -196,8 +196,8 @@ export default function Documentation() {
         
         {/* Twitter Card Meta Tags */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="Developer Documentation | ZVault ZPay" />
-        <meta name="twitter:description" content="Comprehensive documentation for integrating ZPay's private payment processing into your applications." />
+        <meta name="twitter:title" content="Developer Documentation | ZVault Automation" />
+        <meta name="twitter:description" content="Comprehensive documentation for integrating ZVault's privacy-focused automation infrastructure into your applications." />
         <meta name="twitter:image" content="https://yourdomain.com/twitter-image.png" />
         
         {/* Theme Color */}
@@ -241,7 +241,7 @@ export default function Documentation() {
                 style={{ color: "var(--color-foreground)" }}
                 variants={fadeInUp}
               >
-                Simple, powerful, and privacy-focused payment processing with ZPay
+                Simple, powerful, and privacy-focused automation with ZVault
               </motion.p>
               <motion.div
                 className="flex flex-col items-center justify-center gap-5 sm:flex-row"
@@ -419,7 +419,7 @@ export default function Documentation() {
                     <div className="mb-8 pb-6 border-b" style={{ borderColor: "var(--color-border)" }}>
                       <h2 className={headingClasses.section}>Overview & Quick Start</h2>
                       <p className="mb-6 text-lg" style={{ color: "var(--color-foreground-alt)" }}>
-                        ZPay provides a simple API to initiate a privacy-focused Zcash payment process. Integrate ZPay to generate payment addresses and receive notifications.
+                        ZVault provides a simple API to initiate privacy-focused automation processes. Integrate ZVault to execute tasks and receive notifications.
                       </p>
 
                       <h3 className="text-xl font-semibold mt-6 mb-4" style={{ color: "var(--color-foreground)" }}>Integration Steps</h3>
@@ -429,7 +429,7 @@ export default function Documentation() {
                         <div>
                           <h4 className="text-lg font-semibold mb-1" style={{ color: "var(--color-foreground)" }}>Account Setup</h4>
                           <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                            <a href="#account-setup" onClick={(e) => { e.preventDefault(); setActiveSection("account-setup"); document.getElementById("account-setup")?.scrollIntoView({ behavior: 'smooth' }); }} className="font-medium" style={{ color: "var(--color-accent)" }}>Set up your ZPay account</a> to get your API key and configure your destination Zcash address and webhook details.
+                            <a href="#account-setup" onClick={(e) => { e.preventDefault(); setActiveSection("account-setup"); document.getElementById("account-setup")?.scrollIntoView({ behavior: 'smooth' }); }} className="font-medium" style={{ color: "var(--color-accent)" }}>Set up your ZVault account</a> to get your API key and configure your task execution details.
                           </p>
                         </div>
                       </div>
@@ -437,9 +437,9 @@ export default function Documentation() {
                       <div className="flex items-start mb-6">
                         <div className="flex-shrink-0 h-10 w-10 rounded-full flex items-center justify-center font-bold mr-4 text-sm" style={{ backgroundColor: "var(--color-primary-muted)", color: "var(--color-accent)" }}>2</div>
                         <div>
-                          <h4 className="text-lg font-semibold mb-1" style={{ color: "var(--color-foreground)" }}>Create Payment Request</h4>
+                          <h4 className="text-lg font-semibold mb-1" style={{ color: "var(--color-foreground)" }}>Create Automation Request</h4>
                           <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                            Call the <a href="#endpoint-create" onClick={(e) => { e.preventDefault(); setActiveSection("endpoint-create"); document.getElementById("endpoint-create")?.scrollIntoView({ behavior: 'smooth' }); }} className="font-medium" style={{ color: "var(--color-accent)" }}><code>POST /create</code></a> endpoint with your API key, user/invoice identifiers, and the amount (in GBP cents). ZPay will return a unique Zcash address (`t_address`) and the calculated ZEC amount.
+                            Call the <a href="#endpoint-create" onClick={(e) => { e.preventDefault(); setActiveSection("endpoint-create"); document.getElementById("endpoint-create")?.scrollIntoView({ behavior: 'smooth' }); }} className="font-medium" style={{ color: "var(--color-accent)" }}><code>POST /create</code></a> endpoint with your API key, user/task identifiers, and the task parameters. ZVault will return a unique task ID and status.
                           </p>
                            {/* Placeholder for Create Payment Code Snippet */}
                            <div className="text-sm p-4 rounded-lg overflow-x-auto mb-2 bg-gray-800 text-gray-200">
@@ -504,25 +504,25 @@ curl -X POST \\
                           <div className="p-6 rounded-lg border" style={{ backgroundColor: "var(--color-surface-raised)", borderColor: "var(--color-border)" }}>
                             <h4 className="font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>Simple API</h4>
                             <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>
-                              Straightforward RESTful API for initiating payment processes.
+                              Straightforward RESTful API for initiating automation processes.
                             </p>
                           </div>
                           <div className="p-6 rounded-lg border" style={{ backgroundColor: "var(--color-surface-raised)", borderColor: "var(--color-border)" }}>
                             <h4 className="font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>Privacy Focused</h4>
                             <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>
-                              Leverages Zcash shielded transactions for enhanced privacy during internal transfers.
+                              Leverages Zcash shielded transactions for enhanced privacy during task execution.
                             </p>
                           </div>
                           <div className="p-6 rounded-lg border" style={{ backgroundColor: "var(--color-surface-raised)", borderColor: "var(--color-border)" }}>
-                            <h4 className="font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>Direct Settlements</h4>
+                            <h4 className="font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>Direct Task Execution</h4>
                             <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>
-                              Funds are ultimately sent directly to your configured Zcash address.
+                              Tasks are executed directly based on your configured parameters.
                             </p>
                           </div>
                           <div className="p-6 rounded-lg border" style={{ backgroundColor: "var(--color-surface-raised)", borderColor: "var(--color-border)" }}>
                             <h4 className="font-semibold mb-2" style={{ color: "var(--color-foreground)" }}>Webhook Notifications</h4>
                             <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>
-                              Receive real-time notification when funds are initially detected.
+                              Receive real-time notification when tasks are initiated and completed.
                             </p>
                           </div>
                       </div>
@@ -544,7 +544,7 @@ curl -X POST \\
                   <article className={`prose max-w-none ${activeSection === "account-setup" ? "block" : "hidden"}`} id="account-setup">
                     <h2 className={headingClasses.section}>Account & API Key Setup</h2>
                     <p className="mb-8 text-lg" style={{ color: "var(--color-foreground-alt)" }}>
-                      Configure your ZPay account, destination Zcash wallet, API key, and webhook settings.
+                      Configure your ZVault account, task execution parameters, API key, and webhook settings.
                     </p>
 
                     <h3 className="text-xl font-semibold mt-6 mb-4" style={{ color: "var(--color-foreground)" }}>Prerequisites</h3>
@@ -606,7 +606,7 @@ curl -X POST \\
                      <div className="p-4 rounded-lg border mb-6" style={{ backgroundColor: "rgba(245, 158, 11, 0.1)", borderColor: "rgba(245, 158, 11, 0.3)" }}>
                         <h4 className="font-semibold mb-2" style={{ color: "var(--color-accent)" }}>Important Security Note</h4>
                         <p className="text-sm" style={{ color: "var(--color-foreground-alt)" }}>
-                           Your API key grants access to initiate payment processes. **Never expose your API key in client-side code (like JavaScript running in a browser).** All API calls using your key should originate from your secure backend server.
+                           Your API key grants access to initiate automation processes. **Never expose your API key in client-side code (like JavaScript running in a browser).** All API calls using your key should originate from your secure backend server.
                         </p>
                       </div>
 
@@ -639,7 +639,7 @@ curl -X POST \\
                      <section id="api-overview" className="mb-10 pb-6 border-b" style={{ borderColor: "var(--color-border)" }}>
                         <h3 className="text-2xl font-semibold mt-6 mb-4" style={{ color: "var(--color-foreground)" }}>Overview</h3>
                         <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                            This API provides endpoints to initiate and manage the ZPay payment processing container. It allows you to request payment address generation and query the status of associated processes.
+                            This API provides endpoints to initiate and manage the ZVault automation process. It allows you to request task execution and query the status of associated processes.
                         </p>
                         <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
                             Communication should ideally occur over HTTPS if deployed publicly (typically handled by a reverse proxy).
@@ -660,7 +660,7 @@ curl -X POST \\
 
                         <h4 className="text-xl font-semibold mt-6 mb-3" style={{ color: "var(--color-foreground)" }}>Authentication</h4>
                         <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                            All API requests require a valid `api_key` associated with a user in the ZPay database. The API key must be provided with each request in one of the following ways:
+                            All API requests require a valid `api_key` associated with a user in the ZVault database. The API key must be provided with each request in one of the following ways:
                         </p>
                         <ul className="list-disc list-inside space-y-2 mb-4 pl-4" style={{ color: "var(--color-foreground-alt)" }}>
                             <li><b>For `GET` requests:</b> As a URL query parameter.<br/><code className="text-sm">GET /create?api_key=YOUR_API_KEY&...</code></li>
@@ -832,12 +832,12 @@ curl -X POST \\
                     {/* Content dynamically injected from webhook_receiver_docs_v1 */}
                      <h2 className="text-3xl font-bold mb-4" style={{ color: "var(--color-foreground)" }}>Receiving Webhooks</h2>
                      <p className="mb-8 text-lg" style={{ color: "var(--color-foreground-alt)" }}>
-                        ZPay can send an initial webhook notification when funds are first detected for a transaction.
+                        ZVault can send an initial webhook notification when tasks are first initiated.
                      </p>
 
                      <h3 className="text-xl font-semibold mt-6 mb-4" style={{ color: "var(--color-foreground)" }}>Fund Detection Webhook</h3>
                       <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                        This notification is sent via HTTP `POST` to your pre-configured URL as soon as funds arrive in the temporary receiving wallet. It allows your application to update its status promptly (e.g., to "Processing Payment").
+                        This notification is sent via HTTP `POST` to your pre-configured URL as soon as tasks are initiated. It allows your application to update its status promptly (e.g., to "Processing Task").
                       </p>
 
                      <h4 className="text-lg font-semibold mt-4 mb-3" style={{ color: "var(--color-foreground)" }}>Payload Structure</h4>
@@ -853,14 +853,14 @@ curl -X POST \\
 }`}</code></pre>
                       </div>
                       <p className="text-sm mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                        Note: This initial webhook only confirms fund detection and does not contain amounts, addresses used in later steps, or final transaction hashes.
+                        Note: This initial webhook only confirms task initiation and does not contain amounts, addresses used in later steps, or final transaction hashes.
                       </p>
 
                      <h4 className="text-lg font-semibold mt-4 mb-3" style={{ color: "var(--color-foreground)" }}>Security: Bearer Token Validation</h4>
                       <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
                         The request includes an `Authorization` header:
                         <code className="block text-sm bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded my-2">Authorization: Bearer &lt;YOUR_CONFIGURED_SECRET&gt;</code>
-                        Your endpoint **must** validate this token against the secret configured in your ZPay account settings for this integration. Reject requests with missing or invalid tokens (e.g., with status `401` or `403`). Signature verification (e.g., `x-zpay-signature`) is **not** used for this webhook.
+                        Your endpoint **must** validate this token against the secret configured in your ZVault account settings for this integration. Reject requests with missing or invalid tokens (e.g., with status `401` or `403`). Signature verification (e.g., `x-zvault-signature`) is **not** used for this webhook.
                       </p>
                       {/* Example Node.js handler */}
                       <h5 className="text-base font-semibold mt-4 mb-2" style={{ color: "var(--color-foreground)" }}>Example Handler (Node.js/Express)</h5>
@@ -882,7 +882,7 @@ curl -X POST \\
 
                      <h4 className="text-lg font-semibold mt-4 mb-3" style={{ color: "var(--color-foreground)" }}>Processing the Payload</h4>
                       <p className="mb-4" style={{ color: "var(--color-foreground-alt)" }}>
-                         Use the received `userId` and `invoiceId` to identify the transaction in your system and update its status (e.g., to "Processing"). Final transaction details (hashes, addresses used internally) can be retrieved later using the <code className="text-sm">/shared-data</code> API endpoint.
+                         Use the received `userId` and `invoiceId` to identify the task in your system and update its status (e.g., to "Processing"). Final task details (hashes, addresses used internally) can be retrieved later using the <code className="text-sm">/shared-data</code> API endpoint.
                       </p>
 
                   </article>

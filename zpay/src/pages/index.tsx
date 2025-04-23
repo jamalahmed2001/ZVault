@@ -114,14 +114,14 @@ export default function Home() {
     <>
       <Head>
         {/* --- Basic Meta Tags --- */}
-        <title>ZVault ZPay | Truly Private Zcash Payment Processing</title>
-        <meta name="description" content="Experience the future of secure and private crypto payments with ZPay by ZVault. Powered by Zcash for unmatched privacy. Simple integration, instant payouts." />
+        <title>ZVault Automation | Privacy-Focused Shielding Infrastructure</title>
+        <meta name="description" content="Experience the future of secure and private automation with ZVault. Powered by Zcash for unmatched privacy. Simple integration, instant execution." />
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://z-vault.vercel.app" /> {/* Replace with your actual domain */}
 
         {/* --- Open Graph Meta Tags (for Facebook, LinkedIn, etc.) --- */}
-        <meta property="og:title" content="ZVault ZPay | Truly Private Zcash Payment Processing" />
-        <meta property="og:description" content="Secure, private crypto payments powered by Zcash. Simple setup, instant payouts." />
+        <meta property="og:title" content="ZVault Automation | Privacy-Focused Shielding Infrastructure" />
+        <meta property="og:description" content="Secure, private automation powered by Zcash. Simple setup, instant execution." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://z-vault.vercel.app" /> {/* Replace with your actual domain */}
         <meta property="og:image" content="https://z-vault.vercel.app/og-image.png" /> {/* Replace with your OG image URL */}
@@ -130,8 +130,8 @@ export default function Home() {
 
         {/* --- Twitter Card Meta Tags --- */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ZVault ZPay | Truly Private Zcash Payment Processing" />
-        <meta name="twitter:description" content="Secure, private crypto payments powered by Zcash. Simple setup, instant payouts." />
+        <meta name="twitter:title" content="ZVault Automation | Privacy-Focused Shielding Infrastructure" />
+        <meta name="twitter:description" content="Secure, private automation powered by Zcash. Simple setup, instant execution." />
         <meta name="twitter:image" content="https://z-vault.vercel.app/twitter-image.png" /> {/* Replace with your Twitter image URL */}
         {/* Optional: <meta name="twitter:site" content="@YourTwitterHandle" /> */}
         {/* Optional: <meta name="twitter:creator" content="@CreatorTwitterHandle" /> */}
@@ -177,14 +177,14 @@ export default function Home() {
                 }}
                 variants={fadeInUp}
               >
-                🚀 Introducing ZPay by ZVault
+                🚀 Introducing ZVault Automation
               </motion.div>
               <motion.h1
                 className="mb-8 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
                 style={{ color: "var(--color-primary-foreground)" }}
                 variants={fadeInUp}
               >
-                The <span style={{ color: "var(--color-accent)" }}>Shielded</span> Standard for Crypto Payments
+                The <span style={{ color: "var(--color-accent)" }}>Shielded</span> Standard for Crypto Automation
               </motion.h1>
               <motion.p
                 className="mb-12 text-lg md:text-xl lg:text-2xl mx-auto max-w-3xl"
@@ -194,8 +194,7 @@ export default function Home() {
                 }}
                 variants={fadeInUp}
               >
-                Leverage the power of Zcash for truly private, secure, and seamless payment processing.
-                Simple signup. Effortless integration. Simply secure.
+                Leverage the power of Zcash for truly private, secure, and seamless automation. Simple signup. Effortless integration. Simply secure.
               </motion.p>
               <motion.div
                 className="flex flex-col items-center justify-center gap-5 sm:flex-row"
@@ -268,9 +267,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Key Benefits</span>
-              <h2 className={headingClasses.sectionLight}>Why ZPay is Different</h2>
+              <h2 className={headingClasses.sectionLight}>Why ZVault is Different</h2>
               <p className="mx-auto max-w-3xl text-lg text-[var(--color-foreground-dark-alt)] mt-4">
-                Go beyond standard payment solutions. Embrace unparalleled privacy, speed, and simplicity for your business transactions.
+                Go beyond standard solutions. Embrace unparalleled privacy, speed, and simplicity for your automation tasks.
               </p>
             </motion.div>
 
@@ -331,7 +330,7 @@ export default function Home() {
                 </div>
                 <h3 className={headingClasses.cardLight}>Effortless API Integration</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  Get up and running quickly with our developer-friendly API and clear documentation. Focus on your core business, not complex payment logic.
+                  Get up and running quickly with our developer-friendly API and clear documentation. Focus on your core business, not complex automation logic.
                 </p>
               </motion.div>
             </motion.div>
@@ -352,7 +351,7 @@ export default function Home() {
                 {/* Removed redundant icon, using list icons below */}
                 <h2 className={headingClasses.section}>Security Through Shielding</h2>
                 <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--color-foreground-alt)" }}>
-                  ZPay is built upon the battle-tested Zcash protocol, renowned for its pioneering use of zk-SNARKs. This cryptographic breakthrough allows transaction verification without revealing any sensitive data, providing mathematical certainty of privacy.
+                  ZVault is built upon the battle-tested Zcash protocol, renowned for its pioneering use of zk-SNARKs. This cryptographic breakthrough allows task verification without revealing any sensitive data, providing mathematical certainty of privacy.
                 </p>
                 <ul className="space-y-4" style={{ color: "var(--color-foreground-alt)" }}>
                   <li className="flex items-start">
@@ -417,9 +416,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Simple Process</span>
-              <h2 className={headingClasses.sectionLight}>Start Accepting ZPay in Minutes</h2>
+              <h2 className={headingClasses.sectionLight}>Start Automating with ZVault in Minutes</h2>
               <p className="mx-auto max-w-2xl text-lg mt-4 text-[var(--color-foreground-dark-alt)]">
-                Our streamlined process gets you ready for private payments quickly.
+                Our streamlined process gets you ready for private automation quickly.
               </p>
             </motion.div>
 
@@ -444,9 +443,9 @@ export default function Home() {
                       borderColor: "var(--color-primary)"
                     }}>1</div>
                   <CogIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" />
-                  <h3 className={headingClasses.cardLight}>Sign Up & Configure</h3> {/* Combined steps 1&2 */}
+                  <h3 className={headingClasses.cardLight}>Sign Up & Configure</h3>
                   <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Create your ZVault account. In the dashboard, enter your Zcash shielded address (zs...) where you'll receive payments.
+                    Create your ZVault account. In the dashboard, enter your Zcash shielded address (zs...) where you'll receive automation results.
                   </p>
                 </div>
               </motion.div>
@@ -465,10 +464,10 @@ export default function Home() {
                        color: "var(--color-accent-foreground)",
                        borderColor: "var(--color-accent)"
                      }}>2</div>
-                   <CodeBracketIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-accent)]" /> {/* Changed Icon */}
-                   <h3 className={headingClasses.cardLight}>Get API Key</h3> {/* Simplified title */}
+                   <CodeBracketIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-accent)]" />
+                   <h3 className={headingClasses.cardLight}>Get API Key</h3>
                    <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Generate your unique API key from the dashboard. Keep it secure – this authorizes your payment requests.
+                    Generate your unique API key from the dashboard. Keep it secure – this authorizes your automation requests.
                    </p>
                  </div>
               </motion.div>
@@ -487,10 +486,10 @@ export default function Home() {
                       color: "var(--color-primary-foreground)",
                       borderColor: "var(--color-primary)"
                     }}>3</div>
-                  <BoltIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" /> {/* Changed Icon */}
+                  <BoltIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" />
                   <h3 className={headingClasses.cardLight}>Integrate & Launch</h3>
                   <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Use our API docs to integrate the ZPay button or endpoints. Start accepting private Zcash payments instantly!
+                    Use our API docs to integrate the ZVault automation endpoints. Start executing private Zcash automation tasks instantly!
                   </p>
                 </div>
               </motion.div>
@@ -510,9 +509,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Perfect For</span>
-              <h2 className={headingClasses.section}>Who Benefits from ZPay?</h2>
+              <h2 className={headingClasses.section}>Who Benefits from ZVault?</h2>
               <p className="mx-auto max-w-3xl text-lg mt-4" style={{ color: "var(--color-foreground-alt)" }}>
-                ZPay is ideal for any individual or business valuing financial privacy and security.
+                ZVault is ideal for any individual or business valuing financial privacy and security.
               </p>
             </motion.div>
 
@@ -696,12 +695,12 @@ export default function Home() {
               <h2
                 className="mb-8 text-3xl font-bold md:text-4xl lg:text-5xl text-[var(--color-foreground-dark)]"
               >
-                Ready to <span style={{ color: "var(--color-accent)" }}>Unlock</span> True Payment Privacy?
+                Ready to <span style={{ color: "var(--color-accent)" }}>Unlock</span> True Privacy in Automation?
               </h2>
               <p
                 className="mb-12 text-lg md:text-xl mx-auto max-w-2xl text-[var(--color-foreground-dark-alt)]"
               >
-                Join ZVault ZPay today and step into the future of secure, private transactions powered by Zcash. No compromises, just confidentiality.
+                Join ZVault Automation today and step into the future of secure, private automation powered by Zcash. No compromises, just confidentiality.
               </p>
               <motion.button
                 onClick={sessionData ? () => void signOut() : () => void signIn()}

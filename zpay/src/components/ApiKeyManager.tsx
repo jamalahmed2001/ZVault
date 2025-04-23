@@ -44,6 +44,9 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
     response?: any;
   }>(null);
 
+  const userProfile = api.auth.getUserProfile.useQuery(undefined, { refetchOnWindowFocus: false });
+  const [zcashAddress, setZcashAddress] = useState<string>("");
+
   // TRPC mutations and queries
   const generateApiKeyMutation = api.auth.generateApiKey.useMutation({
     onSuccess: (data) => {
@@ -89,6 +92,12 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
       }
     }
   }, [fetchApiKeys.data, activeKeyId, onApiKeySelect]);
+
+  useEffect(() => {
+    if (userProfile.data && userProfile.data.zcashAddress) {
+      setZcashAddress(userProfile.data.zcashAddress);
+    }
+  }, [userProfile.data]);
 
   // Evaluate API key strength
   useEffect(() => {
@@ -564,9 +573,9 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
             backgroundColor: "rgba(7, 18, 36, 0.2)", 
             borderColor: "var(--color-border)" 
           }}>
-          <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Test API Key</h3>
+          <h3 className="font-medium mb-4" style={{ color: "var(--color-foreground)" }}>Start Automation</h3>
           <p className="text-sm mb-6" style={{ color: "var(--color-foreground-alt)" }}>
-            Test your API key by creating a Zcash payment request with the following parameters:
+            Start automation by creating a Zcash payment request with the following parameters:
             {apiKey.startsWith('zv_test_') && (
               <span className="block mt-2 italic">
                 Using a test key allows you to send a smaller amount than specified while still validating the payment.
@@ -668,6 +677,19 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
               https://www.v3nture.link/create?user_id={userId}&invoice_id={invoiceId}&amount={Number(amount) * 100}
             </div>
           </div>
+
+          <div className="mb-6">
+            <div className="text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>Destination Address:</div>
+            <div className="rounded-lg px-4 py-3 font-mono text-sm break-all" 
+              style={{ 
+                backgroundColor: "rgba(49, 55, 69, 0.5)", 
+                borderColor: "var(--color-border)", 
+                borderWidth: "1px",
+                color: "var(--color-foreground)" 
+              }}>
+                {zcashAddress || <span style={{ color: 'var(--color-error)' }}>Not set</span>}
+            </div>
+          </div>
           
           <button
             onClick={testApiKey}
@@ -686,7 +708,7 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
             ) : (
               <>
                 <BeakerIcon className="h-5 w-5 mr-2" />
-                <span>Test API Key</span>
+                <span>Start Automation</span>
               </>
             )}
           </button>

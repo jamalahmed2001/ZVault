@@ -59,13 +59,13 @@ export default function About() {
   return (
     <>
       <Head>
-        <title>About ZVault ZPay | Our Mission, Team & Technology</title>
-        <meta name="description" content="Learn about ZVault ZPay's mission to revolutionize private payments with Zcash, our dedicated team, and the technology that powers true financial privacy." />
+        <title>About ZVault Automation | Our Mission, Team & Technology</title>
+        <meta name="description" content="Learn about ZVault Automation's mission to revolutionize privacy-focused automation, our dedicated team, and the technology that powers true privacy." />
         <link rel="canonical" href="https://yourdomain.com/about" />
         
         {/* Open Graph Meta Tags */}
-        <meta property="og:title" content="About ZVault ZPay | Our Mission, Team & Technology" />
-        <meta property="og:description" content="Learn about ZVault ZPay's mission to revolutionize private payments with Zcash, our dedicated team, and the technology that powers true financial privacy." />
+        <meta property="og:title" content="About ZVault Automation | Our Mission, Team & Technology" />
+        <meta property="og:description" content="Learn about ZVault Automation's mission to revolutionize privacy-focused automation, our dedicated team, and the technology that powers true privacy." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://yourdomain.com/about" />
         <meta property="og:image" content="https://yourdomain.com/og-image.png" />
@@ -116,8 +116,7 @@ export default function About() {
                 style={{ color: "var(--color-foreground)" }}
                 variants={fadeInUp}
               >
-                ZPay by ZVault is pioneering a new era of truly private, secure, and seamless
-                payment processing powered by Zcash technology.
+                ZVault is pioneering a new era of truly private, secure, and seamless automation powered by Zcash technology.
               </motion.p>
             </motion.div>
           </div>
@@ -155,10 +154,7 @@ export default function About() {
                 <LightBulbIcon className="h-16 w-16 mb-6" style={{ color: "var(--color-accent)" }} />
                 <h2 className={headingClasses.sectionLight}>Building a Private Financial Future</h2>
                 <p className="text-lg mb-8 leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                  At ZVault, we believe financial privacy is a fundamental right, not a privilege. 
-                  Our mission is to provide businesses and individuals with payment solutions that 
-                  protect transaction data through state-of-the-art cryptography, all while maintaining 
-                  the speed and convenience expected in modern commerce.
+                  At ZVault, we believe privacy is a fundamental right, not a privilege. Our mission is to provide businesses and individuals with automation solutions that protect data through state-of-the-art cryptography, all while maintaining the speed and convenience expected in modern operations.
                 </p>
                 <div className="space-y-6 text-[var(--color-foreground-dark-alt)] mb-8">
                   <div className="flex items-start">
@@ -230,10 +226,9 @@ export default function About() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-20 text-center" variants={fadeInUp}>
               <span className={headingClasses.tagline}>Powerful Technology</span>
-              <h2 className={headingClasses.section}>The Science Behind ZPay</h2>
+              <h2 className={headingClasses.section}>The Science Behind ZVault</h2>
               <p className="mx-auto max-w-3xl text-lg mt-4 text-[var(--color-foreground-alt)]">
-                ZPay leverages cutting-edge cryptographic techniques and blockchain technology 
-                to deliver truly private payment processing.
+                ZVault leverages cutting-edge cryptographic techniques and blockchain technology to deliver truly private automation processes.
               </p>
             </motion.div>
 
@@ -512,13 +507,13 @@ export default function About() {
                 className="mb-8 text-3xl font-bold md:text-4xl lg:text-5xl text-[var(--color-foreground-dark)]" 
                 variants={fadeInUp}
               >
-                Ready to Experience True Payment Privacy?
+                Ready to Experience True Privacy in Automation?
               </motion.h2>
               <motion.p 
                 className="mb-12 text-lg md:text-xl mx-auto max-w-2xl text-[var(--color-foreground-dark-alt)]" 
                 variants={fadeInUp}
               >
-                Join us in building a more private financial future. Get started with ZPay today.
+                Join us in building a more private future. Get started with ZVault today.
               </motion.p>
               <motion.div className="flex flex-col sm:flex-row justify-center items-center gap-4" variants={fadeInUp}>
                 <Link 

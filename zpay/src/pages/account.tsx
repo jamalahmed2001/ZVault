@@ -367,8 +367,8 @@ export default function Account() {
   return (
     <>
       <Head>
-        <title>Account Settings | ZVault ZPay</title>
-        <meta name="description" content="Manage your ZPay account settings, API keys, and webhook integrations." />
+        <title>Account Settings | ZVault Automation</title>
+        <meta name="description" content="Manage your ZVault account settings, API keys, and webhook integrations." />
       </Head>
 
       <main className="min-h-screen" style={{ backgroundColor: "var(--color-background)", color: "var(--color-foreground)" }}>
@@ -391,11 +391,14 @@ export default function Account() {
               style={{ color: "var(--color-foreground-alt)" }}
               variants={fadeInUp}
             >
-              Manage your ZPay account, API keys, and integration settings
+              Manage your ZVault account, API keys, and integration settings
             </motion.p>
           </motion.div>
 
+      
+
           <div className="grid grid-cols-1 gap-10 md:grid-cols-3">
+            
             {/* Sidebar Navigation */}
             <div className="md:col-span-1">
               <div className="sticky top-20 rounded-xl shadow-lg p-6" style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px" }}>

@@ -38,8 +38,8 @@ export default function PrivacyPolicy() {
   return (
     <>
       <Head>
-        <title>Privacy Policy | ZVault ZPay</title>
-        <meta name="description" content="ZVault ZPay's Privacy Policy outlines how we collect, use, and protect your personal information while providing our payment processing services." />
+        <title>Privacy Policy | ZVault Automation</title>
+        <meta name="description" content="ZVault Automation's Privacy Policy outlines how we collect, use, and protect your personal information while providing our automation services." />
         <link rel="canonical" href="https://yourdomain.com/privacy-policy" />
       </Head>
 
@@ -97,7 +97,7 @@ export default function PrivacyPolicy() {
                 "--tw-prose-bullets": "var(--color-foreground-dark-alt)",
               } as React.CSSProperties}>
                 <p className="lead text-lg text-[var(--color-foreground-dark-alt)] mb-8">
-                  At ZVault ("we," "us," or "our"), we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our ZPay service. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access our service.
+                  At ZVault ("we," "us," or "our"), we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you use our automation service. Please read this privacy policy carefully. If you do not agree with the terms of this privacy policy, please do not access our service.
                 </p>
                 
                 <h2>1. Information We Collect</h2>
@@ -119,7 +119,7 @@ export default function PrivacyPolicy() {
                 <ul>
                   <li>Basic identification and contact details (name, email address)</li>
                   <li>Business information (business name, website URL for webhook verification)</li>
-                  <li>Zcash shielded address (where you receive payments)</li>
+                  <li>Zcash shielded address (where you execute tasks)</li>
                   <li>Account credentials (password, authentication information)</li>
                 </ul>
                 
@@ -145,7 +145,7 @@ export default function PrivacyPolicy() {
                   <li>Any other data shielded by Zcash's zk-SNARKs technology</li>
                 </ul>
                 <p>
-                  This means that while we facilitate the payment process, we do not have visibility into the details of individual transactions beyond the minimum required for our API to function.
+                  This means that while we facilitate the automation process, we do not have visibility into the details of individual tasks beyond the minimum required for our API to function.
                 </p>
                 
                 <h2>2. How We Use Your Information</h2>
@@ -201,11 +201,11 @@ export default function PrivacyPolicy() {
                 
                 <h2>5. KYC Requirements and Responsibility</h2>
                 <p>
-                  ZVault ZPay provides payment processing infrastructure as a service. We do not directly engage with the end customers who make payments through our system, and we have no visibility into the specific transaction details due to the privacy features of Zcash's shielded transactions.
+                  ZVault Automation provides automation infrastructure as a service. We do not directly engage with the end customers who execute tasks through our system, and we have no visibility into the specific task details due to the privacy features of Zcash's shielded transactions.
                 </p>
                 
                 <p>
-                  <strong>Customer Responsibility for KYC/AML Compliance:</strong> If you use our service to receive payments for your business, you acknowledge and agree that:
+                  <strong>Customer Responsibility for KYC/AML Compliance:</strong> If you use our service to execute tasks for your business, you acknowledge and agree that:
                 </p>
                 <ul>
                   <li>You are solely responsible for complying with all applicable Know Your Customer (KYC), Anti-Money Laundering (AML), and Counter-Terrorist Financing (CTF) laws and regulations in the jurisdictions where you operate.</li>

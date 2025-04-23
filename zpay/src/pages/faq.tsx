@@ -59,110 +59,107 @@ const categories = [
 const faqs = {
   general: [
     {
-      question: "What is ZVault ZPay?",
-      answer: "ZVault ZPay is a private payment processing platform powered by Zcash blockchain technology. We enable businesses and individuals to accept secure, private cryptocurrency payments with instant settlement and no intermediaries holding your funds."
+      question: "What is ZVault Automation?",
+      answer: "ZVault Automation is a privacy-focused automation infrastructure powered by Zcash blockchain technology. We enable businesses and individuals to execute secure, private automation tasks with instant execution and no intermediaries holding your data."
     },
     {
-      question: "How is ZPay different from other payment processors?",
-      answer: "Unlike traditional payment processors that expose transaction data or standard crypto payment services, ZPay offers true transaction privacy through Zcash's zk-SNARKs technology. We also offer direct payouts to your shielded address, eliminating the need for a third party to hold your funds."
+      question: "How is ZVault different from other automation providers?",
+      answer: "Unlike traditional automation providers that expose task data or standard automation services, ZVault offers true task privacy through Zcash's zk-SNARKs technology. We also offer direct execution to your shielded environment, eliminating the need for a third party to hold your data."
     },
     {
-      question: "What cryptocurrencies does ZPay support?",
-      answer: "Currently, ZPay exclusively supports Zcash (ZEC) through shielded transactions. This specialized focus allows us to provide the highest level of privacy and security for all transactions. We may add support for additional privacy-focused cryptocurrencies in the future."
+      question: "What tasks does ZVault support?",
+      answer: "Currently, ZVault exclusively supports Zcash (ZEC) through shielded automation tasks. This specialized focus allows us to provide the highest level of privacy and security for all tasks. We may add support for additional privacy-focused tasks in the future."
     },
     {
-      question: "Where can I use ZPay?",
-      answer: "ZPay can be integrated into virtually any online business model including e-commerce stores, digital services, content creators, freelancers, subscription services, and more. If you can sell it online, you can accept payment through ZPay."
+      question: "Where can I use ZVault?",
+      answer: "ZVault can be integrated into virtually any online business model including e-commerce stores, digital services, content creators, freelancers, subscription services, and more. If you can automate it online, you can execute tasks through ZVault."
     }
   ],
   payment: [
     {
-      question: "How quickly are payments processed?",
-      answer: "Payments are processed as quickly as the Zcash network confirms transactions, typically within 10-40 minutes depending on network conditions. Your funds are sent directly to your designated Zcash address immediately upon confirmation."
+      question: "How quickly are tasks executed?",
+      answer: "Tasks are executed as quickly as the Zcash network confirms transactions, typically within 10-40 minutes depending on network conditions. Your tasks are executed directly in your designated Zcash environment immediately upon confirmation."
     },
     {
-      question: "Are there transaction limits?",
-      answer: "Standard accounts can process up to $10,000 USD equivalent per day with no monthly limits. Enterprise accounts can be configured with custom limits based on business needs. There are no minimum transaction amounts."
+      question: "Are there task limits?",
+      answer: "Standard accounts can execute up to $10,000 USD equivalent per day with no monthly limits. Enterprise accounts can be configured with custom limits based on business needs. There are no minimum task amounts."
     },
     {
-      question: "What are the fees for using ZPay?",
-      answer: "ZPay charges a flat 1% fee on successful transactions, which is among the lowest in the cryptocurrency payment industry. There are no monthly fees, setup costs, or hidden charges. Enterprise customers may qualify for volume-based discounts."
+      question: "What are the fees for using ZVault?",
+      answer: "ZVault charges a flat 1% fee on successful tasks, which is among the lowest in the automation industry. There are no monthly fees, setup costs, or hidden charges. Enterprise customers may qualify for volume-based discounts."
     },
+ 
     {
-      question: "How do refunds work?",
-      answer: "Merchants can issue refunds through the ZPay dashboard by referencing the original transaction ID. The refund will be processed as a new transaction from the merchant's Zcash address back to the customer's original payment address."
-    },
-    {
-      question: "Can I receive automatic payouts in fiat currency?",
-      answer: "Currently, ZPay focuses exclusively on Zcash payments with settlement directly to your Zcash address. Automatic conversion to fiat currencies is not supported at this time, but may be added as a feature in the future."
+      question: "Can I receive automatic task results in fiat currency?",
+      answer: "Currently, ZVault focuses exclusively on Zcash tasks with execution directly in your Zcash environment. Automatic conversion to fiat currencies is not supported at this time, but may be added as a feature in the future."
     }
   ],
   security: [
     {
-      question: "How does ZPay protect transaction privacy?",
-      answer: "ZPay leverages Zcash's zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge) to shield all transaction details. This cryptographic technology ensures that transaction metadata such as sender, receiver, and amount remain private and are not visible on the public blockchain."
+      question: "How does ZVault protect task privacy?",
+      answer: "ZVault leverages Zcash's zk-SNARKs (Zero-Knowledge Succinct Non-Interactive Arguments of Knowledge) to shield all task details. This cryptographic technology ensures that task metadata such as sender, receiver, and parameters remain private and are not visible on the public blockchain."
     },
     {
-      question: "Is my customer's payment information secure?",
-      answer: "Absolutely. When customers pay through ZPay, their payment information is protected by Zcash's encryption protocols. No sensitive payment details are stored on our servers, and all transaction data is shielded using zero-knowledge proofs."
+      question: "Is my task information secure?",
+      answer: "Absolutely. When tasks are executed through ZVault, their information is protected by Zcash's encryption protocols. No sensitive task details are stored on our servers, and all task data is shielded using zero-knowledge proofs."
     },
     {
-      question: "What security measures does ZPay implement?",
-      answer: "ZPay implements industry-leading security practices including encrypted communications (TLS), secure API authentication, IP filtering, rate limiting, and regular security audits. Our infrastructure is hosted on secure cloud platforms with multiple layers of protection."
+      question: "What security measures does ZVault implement?",
+      answer: "ZVault implements industry-leading security practices including encrypted communications (TLS), secure API authentication, IP filtering, rate limiting, and regular security audits. Our infrastructure is hosted on secure cloud platforms with multiple layers of protection."
     },
     {
-      question: "Can transaction data be subpoenaed or seized?",
-      answer: "ZPay does not store transaction amounts, sender/receiver information, or other private transaction details, so this information cannot be provided. We only maintain minimal records required for operational purposes, such as API usage statistics and account information."
+      question: "Can task data be subpoenaed or seized?",
+      answer: "ZVault does not store task amounts, sender/receiver information, or other private task details, so this information cannot be provided. We only maintain minimal records required for operational purposes, such as API usage statistics and account information."
     }
   ],
   integration: [
     {
-      question: "How do I integrate ZPay with my website?",
-      answer: "ZPay offers multiple integration options: 1) Pre-built payment buttons for simple implementations, 2) REST API for custom integrations, and 3) Plugins for popular e-commerce platforms. Our documentation provides step-by-step guides for each method."
+      question: "How do I integrate ZVault with my website?",
+      answer: "ZVault offers multiple integration options: 1) Pre-built automation buttons for simple implementations, 2) REST API for custom integrations, and 3) Plugins for popular e-commerce platforms. Our documentation provides step-by-step guides for each method."
     },
     {
       question: "Which e-commerce platforms are supported?",
       answer: "We currently offer official plugins for WooCommerce, Shopify, Magento, and OpenCart. Our REST API can be used to create custom integrations with any platform. More official plugins are being developed based on user demand."
     },
     {
-      question: "Do I need technical knowledge to use ZPay?",
-      answer: "Basic technical knowledge is helpful but not required. Our pre-built payment buttons require minimal setup - just copy and paste a snippet of code. For more complex integrations, some development experience is beneficial, or you can work with a developer familiar with API integration."
+      question: "Do I need technical knowledge to use ZVault?",
+      answer: "Basic technical knowledge is helpful but not required. Our pre-built automation buttons require minimal setup - just copy and paste a snippet of code. For more complex integrations, some development experience is beneficial, or you can work with a developer familiar with API integration."
     },
     {
-      question: "How do webhooks work with ZPay?",
-      answer: "Webhooks are HTTP callbacks that notify your system when a payment event occurs. When a customer completes a payment, ZPay sends a webhook notification to your specified URL with transaction details. This allows your system to automatically update orders, deliver digital products, or trigger other business processes."
+      question: "How do webhooks work with ZVault?",
+      answer: "Webhooks are HTTP callbacks that notify your system when a task event occurs. When a task is completed, ZVault sends a webhook notification to your specified URL with task details. This allows your system to automatically update orders, deliver digital products, or trigger other business processes."
     }
   ],
   account: [
     {
-      question: "How do I create a ZPay account?",
-      answer: "Creating a ZPay account is simple: 1) Visit our signup page, 2) Enter your email and create a password (or sign up with Google), 3) Verify your email address, 4) Enter your business details and Zcash address, 5) Set up your webhook URL. The entire process takes less than 10 minutes."
+      question: "How do I create a ZVault account?",
+      answer: "Creating a ZVault account is simple: 1) Visit our signup page, 2) Enter your email and create a password (or sign up with Google), 3) Verify your email address, 4) Enter your business details and Zcash address, 5) Set up your webhook URL. The entire process takes less than 10 minutes."
     },
     {
       question: "What information do I need to provide when signing up?",
-      answer: "To create a basic account, you'll need to provide: 1) Your email address, 2) Your business name, 3) Your website URL for webhook verification, and 4) A Zcash shielded address (zs...) where you want to receive payments."
+      answer: "To create a basic account, you'll need to provide: 1) Your email address, 2) Your business name, 3) Your website URL for webhook verification, and 4) A Zcash shielded address (zs...) where you want to execute tasks."
     },
     {
-      question: "Can I have multiple Zcash addresses for different products?",
-      answer: "Yes, ZPay allows you to set up multiple payment destinations for different product lines, websites, or business divisions. You can configure different Zcash addresses for various payment buttons or API endpoints through your dashboard."
+      question: "Can I have multiple Zcash addresses for different tasks?",
+      answer: "Yes, ZVault allows you to set up multiple task destinations for different product lines, websites, or business divisions. You can configure different Zcash addresses for various automation buttons or API endpoints through your dashboard."
     },
     {
       question: "How do I update my account information?",
-      answer: "You can update your account information, including your business details, Zcash address, webhook URL, and API settings through the ZPay dashboard. Changes to critical settings like payment addresses require re-authentication for security."
+      answer: "You can update your account information, including your business details, Zcash address, webhook URL, and API settings through the ZVault dashboard. Changes to critical settings like task addresses require re-authentication for security."
     }
   ],
   support: [
     {
-      question: "How can I get help with ZPay integration?",
-      answer: "We offer multiple support channels: 1) Comprehensive documentation at docs.zvaultpay.com, 2) Email support at support@zvaultpay.com, 3) Live chat during business hours, and 4) Video tutorials on our YouTube channel. Enterprise customers also receive access to dedicated support specialists."
+      question: "How can I get help with ZVault integration?",
+      answer: "We offer multiple support channels: 1) Comprehensive documentation at docs.zvault.com, 2) Email support at support@zvault.com, 3) Live chat during business hours, and 4) Video tutorials on our YouTube channel. Enterprise customers also receive access to dedicated support specialists."
     },
     {
-      question: "Does ZPay offer technical support?",
+      question: "Does ZVault offer technical support?",
       answer: "Yes, our technical support team is available to help with integration issues, webhook configuration, and general troubleshooting. Standard support is available through email with a 24-hour response time. Premium and Enterprise accounts receive priority support with faster response times."
     },
     {
-      question: "What should I do if a payment doesn't arrive?",
-      answer: "If a payment doesn't arrive in your wallet, first check the transaction status in your ZPay dashboard. If the transaction shows as confirmed but funds haven't arrived, contact our support team with the transaction ID. We'll help track and resolve the issue promptly."
+      question: "What should I do if a task doesn't execute?",
+      answer: "If a task doesn't execute in your environment, first check the task status in your ZVault dashboard. If the task shows as confirmed but hasn't executed, contact our support team with the task ID. We'll help track and resolve the issue promptly."
     },
     {
       question: "Are there resources to help with integration?",
@@ -170,7 +167,7 @@ const faqs = {
     },
     {
       question: "How do I report a security issue?",
-      answer: "If you discover a security vulnerability, please contact us immediately at security@zvaultpay.com with detailed information. We have a responsible disclosure policy and work quickly to address security concerns. Please encrypt sensitive information using our PGP key available on our security page."
+      answer: "If you discover a security vulnerability, please contact us immediately at security@zvault.com with detailed information. We have a responsible disclosure policy and work quickly to address security concerns. Please encrypt sensitive information using our PGP key available on our security page."
     }
   ]
 };
@@ -179,13 +176,13 @@ export default function FAQ() {
   return (
     <>
       <Head>
-        <title>Frequently Asked Questions | ZVault ZPay</title>
-        <meta name="description" content="Find answers to common questions about ZVault ZPay's private payment processing, security features, integration options, and account management." />
+        <title>Frequently Asked Questions | ZVault Automation</title>
+        <meta name="description" content="Find answers to common questions about ZVault's privacy-focused automation infrastructure, security features, integration options, and account management." />
         <link rel="canonical" href="https://yourdomain.com/faq" />
         
         {/* Open Graph Meta Tags */}
-        <meta property="og:title" content="Frequently Asked Questions | ZVault ZPay" />
-        <meta property="og:description" content="Find answers to common questions about ZVault ZPay's private payment processing, security features, integration options, and account management." />
+        <meta property="og:title" content="Frequently Asked Questions | ZVault Automation" />
+        <meta property="og:description" content="Find answers to common questions about ZVault's privacy-focused automation infrastructure, security features, integration options, and account management." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://yourdomain.com/faq" />
         <meta property="og:image" content="https://yourdomain.com/og-image.png" />
@@ -236,7 +233,7 @@ export default function FAQ() {
                 style={{ color: "var(--color-foreground)" }}
                 variants={fadeInUp}
               >
-                Find answers to common questions about ZVault ZPay's private payment processing.
+                Find answers to common questions about ZVault's privacy-focused automation infrastructure.
               </motion.p>
               
               {/* Search Bar - update input styling */}
@@ -311,12 +308,12 @@ export default function FAQ() {
                   </div>
                   <h3 className="mb-2 text-xl font-bold text-[var(--color-foreground-dark)]">{category.name}</h3>
                   <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed">
-                    {category.id === "general" && "Basic information about ZVault ZPay"}
+                    {category.id === "general" && "Basic information about ZVault Automation"}
                     {category.id === "payment" && "Questions about processing payments"}
                     {category.id === "security" && "Privacy and security information"}
-                    {category.id === "integration" && "Help with implementing ZPay"}
-                    {category.id === "account" && "Managing your ZPay account"}
-                    {category.id === "support" && "Getting help with ZPay"}
+                    {category.id === "integration" && "Help with implementing ZVault"}
+                    {category.id === "account" && "Managing your ZVault account"}
+                    {category.id === "support" && "Getting help with ZVault"}
                   </p>
                 </motion.a>
               ))}
@@ -451,7 +448,7 @@ export default function FAQ() {
             <motion.div className="mb-12 text-center" variants={fadeInUp}>
               <h2 className="text-3xl font-bold text-[var(--color-foreground-dark)] mb-4">Additional Resources</h2>
               <p className="mx-auto max-w-3xl text-lg text-[var(--color-foreground-dark-alt)] mt-4">
-                Explore these resources to learn more about ZPay and get the most out of our platform.
+                Explore these resources to learn more about ZVault and get the most out of our platform.
               </p>
             </motion.div>
 
@@ -467,7 +464,7 @@ export default function FAQ() {
                 <CodeBracketIcon className="h-12 w-12 mb-4" style={{ color: "var(--color-primary)" }} />
                 <h3 className="mb-2 text-xl font-bold text-[var(--color-foreground-dark)]">Developer Documentation</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] mb-4 leading-relaxed">
-                  Comprehensive guides and API references for integrating ZPay.
+                  Comprehensive guides and API references for integrating ZVault.
                 </p>
                 <div className="mt-auto flex items-center text-[var(--color-accent)] font-medium">
                   View Documentation <ArrowRightIcon className="ml-2 h-5 w-5" />
@@ -484,7 +481,7 @@ export default function FAQ() {
                 </svg>
                 <h3 className="mb-2 text-xl font-bold text-[var(--color-foreground-dark)]">Blog & Tutorials</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] mb-4">
-                  Implementation guides, use cases, and updates about ZPay features.
+                  Implementation guides, use cases, and updates about ZVault features.
                 </p>
                 <div className="mt-auto flex items-center text-[var(--color-accent)] font-medium">
                   Read Articles <ArrowRightIcon className="ml-2 h-5 w-5" />
@@ -503,7 +500,7 @@ export default function FAQ() {
                 </svg>
                 <h3 className="mb-2 text-xl font-bold text-[var(--color-foreground-dark)]">Video Tutorials</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] mb-4">
-                  Step-by-step video guides for setting up and using ZPay.
+                  Step-by-step video guides for setting up and using ZVault.
                 </p>
                 <div className="mt-auto flex items-center text-[var(--color-accent)] font-medium">
                   Watch Videos <ArrowRightIcon className="ml-2 h-5 w-5" />
