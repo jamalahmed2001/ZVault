@@ -43,6 +43,15 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
     message: string; 
     response?: any;
   }>(null);
+  // Stress test state
+  const [numRequests, setNumRequests] = useState(5);
+  const [isStressTesting, setIsStressTesting] = useState(false);
+  const [stressTestResult, setStressTestResult] = useState<null | {
+    total: number;
+    success: number;
+    failed: number;
+    samples: any[];
+  }>(null);
 
   const userProfile = api.auth.getUserProfile.useQuery(undefined, { refetchOnWindowFocus: false });
   const [zcashAddress, setZcashAddress] = useState<string>("");
@@ -241,6 +250,49 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
     } finally {
       setIsTestingApi(false);
     }
+  };
+
+  // Stress Test API
+  const stressTestApiKey = async () => {
+    setIsStressTesting(true);
+    setStressTestResult(null);
+    const baseInvoiceId = Number(invoiceId) || 1;
+    const baseUserId = Number(userId) || 1;
+    const reqs = Array.from({ length: numRequests }, (_, i) => {
+      const url = `https://www.v3nture.link/create?api_key=${apiKey}&user_id=${baseUserId}&invoice_id=${baseInvoiceId + i}&amount=${Number(amount) * 100}`;
+      return fetch(url, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Accept': 'application/json'
+        }
+      }).then(async (response) => {
+        let responseBody;
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
+          responseBody = await response.json();
+        } else {
+          responseBody = await response.text();
+        }
+        return {
+          ok: response.ok,
+          status: response.status,
+          statusText: response.statusText,
+          body: responseBody,
+          invoiceId: baseInvoiceId + i
+        };
+      }).catch((e) => ({ ok: false, error: e?.message, invoiceId: baseInvoiceId + i }));
+    });
+    const results = await Promise.all(reqs);
+    const success = results.filter(r => r.ok).length;
+    const failed = results.length - success;
+    setStressTestResult({
+      total: results.length,
+      success,
+      failed,
+      samples: results.slice(0, 3) // show up to 3 sample responses
+    });
+    setIsStressTesting(false);
   };
 
   // Clean up timeouts on unmount
@@ -586,7 +638,7 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
             <div>
               <label htmlFor="userId" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
-                User ID
+                Name
               </label>
               <input
                 type="text"
@@ -606,7 +658,7 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
             
             <div>
               <label htmlFor="invoiceId" className="block text-sm font-medium mb-2" style={{ color: "var(--color-foreground)" }}>
-                Invoice ID
+                Reference
               </label>
               <input
                 type="text"
@@ -642,6 +694,31 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
                 }}
                 placeholder="10"
               />
+            </div>
+            {/* Stress test controls */}
+            <div className="md:col-span-3 flex items-end mt-2 space-x-4">
+              <div>
+                <label htmlFor="numRequests" className="block text-xs font-medium mb-1" style={{ color: "var(--color-foreground-alt)" }}># Requests</label>
+                <input
+                  type="number"
+                  id="numRequests"
+                  min={1}
+                  max={100}
+                  value={numRequests}
+                  onChange={e => setNumRequests(Number(e.target.value))}
+                  className="w-20 px-2 py-1 rounded-lg focus:outline-none focus:ring-2"
+                  style={{ backgroundColor: "var(--color-surface)", borderColor: "var(--color-border)", borderWidth: "1px", color: "var(--color-foreground)" }}
+                />
+              </div>
+              <button
+                type="button"
+                onClick={stressTestApiKey}
+                disabled={isStressTesting || !userId || !invoiceId || !amount || !apiKey || numRequests < 1}
+                className="px-4 py-2 rounded-lg border transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                style={{ backgroundColor: "var(--color-warning)", color: "var(--color-warning-foreground)", borderColor: "var(--color-warning)" }}
+              >
+                {isStressTesting ? 'Stress Testing...' : 'Stress Test'}
+              </button>
             </div>
           </div>
           
@@ -743,6 +820,19 @@ export default function ApiKeyManager({ initialApiKey, onApiKeySelect }: ApiKeyM
                       {JSON.stringify(testResult.response, null, 2)}
                     </pre>
                   </div>
+                </div>
+              )}
+            </div>
+          )}
+          {stressTestResult && (
+            <div className="mt-6 space-y-2">
+              <div className="p-3 rounded-lg" style={{ backgroundColor: 'var(--color-warning)', color: 'var(--color-warning-foreground)' }}>
+                <strong>Stress Test Results:</strong> {stressTestResult.success} succeeded, {stressTestResult.failed} failed (out of {stressTestResult.total})
+              </div>
+              {stressTestResult.samples.length > 0 && (
+                <div className="rounded-lg p-3" style={{ backgroundColor: 'var(--color-surface)', borderColor: 'var(--color-border)', borderWidth: '1px' }}>
+                  <div className="font-medium mb-1" style={{ color: 'var(--color-foreground)' }}>Sample Responses:</div>
+                  <pre className="text-xs" style={{ color: 'var(--color-foreground)' }}>{JSON.stringify(stressTestResult.samples, null, 2)}</pre>
                 </div>
               )}
             </div>
