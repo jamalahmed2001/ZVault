@@ -15,17 +15,7 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
-model Post {
-  id        Int      @id @default(autoincrement())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
 
-  createdBy   User   @relation(fields: [createdById], references: [id])
-  createdById String
-
-  @@index([name])
-}
 
 // Necessary for Next auth
 model Account {
@@ -72,7 +62,6 @@ model User {
   updatedAt        DateTime       @default(now()) @updatedAt
   accounts         Account[]
   sessions         Session[]
-  posts            Post[]
   apiKeys          ApiKey[]
   webhookConfig    WebhookConfig?
   transactions     Transaction[] // Added this relation
@@ -101,6 +90,7 @@ model ApiKey {
   Transaction    Transaction[]
   transactionFee Decimal         @default(1) @db.Decimal(5, 2)
   usage          Int             @default(0)
+  monthlyUsage   Int             @default(0)
   limit          Int             @default(250)
 }
 

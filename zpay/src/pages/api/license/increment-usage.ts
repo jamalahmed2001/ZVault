@@ -24,14 +24,16 @@ export default async function handler(
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  const { apiKey } = req.body;
+  const { apiKey, usage, monthlyUsage } = req.body;
+  console.log(apiKey, usage, monthlyUsage);
+  // if the user gives me diff numbers than what my webhook says its wrong 
   try {
     const key = await validateApiKey(apiKey);
     const updated = await db.apiKey.update({
       where: { id: key.id },
-      data: { usage: { increment: 1 } },
+      data: { usage: { increment: 1 }, monthlyUsage: { increment: 1 } },
     });
-    return res.status(200).json({ usage: updated.usage });
+    return res.status(200).json({ usage: updated.usage, monthlyUsage: updated.monthlyUsage });
   } catch (err: any) {
     return res.status(401).json({ error: err.message });
   }
