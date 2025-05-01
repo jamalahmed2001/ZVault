@@ -386,18 +386,7 @@ export default function AdminAnalytics() {
               {entityStats?.distributions?.sessions?.max ?? "0"}
             </div>
           </div>
-          <div className="border-t border-gray-200 px-4 py-5 sm:grid sm:grid-cols-4 sm:gap-4 sm:px-6">
-            <div className="text-sm font-medium text-gray-500">Posts per User</div>
-            <div className="mt-1 text-sm text-gray-900 sm:mt-0">
-              {entityStats?.averages?.postsPerUser?.toFixed(2) ?? "0"}
-            </div>
-            <div className="mt-1 text-sm text-gray-900 sm:mt-0">
-              {entityStats?.distributions?.posts?.median ?? "0"}
-            </div>
-            <div className="mt-1 text-sm text-gray-900 sm:mt-0">
-              {entityStats?.distributions?.posts?.max ?? "0"}
-            </div>
-          </div>
+        
           <div className="border-t border-gray-200 px-4 py-5 sm:grid sm:grid-cols-4 sm:gap-4 sm:px-6 bg-gray-50">
             <div className="text-sm font-medium text-gray-500">API Keys per User</div>
             <div className="mt-1 text-sm text-gray-900 sm:mt-0">

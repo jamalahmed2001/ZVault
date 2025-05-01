@@ -631,7 +631,6 @@ export const adminRouter = createTRPCRouter({
         userCount,
         accountCount,
         sessionCount,
-        postCount,
         apiKeyCount,
         webhookCount,
         verificationTokenCount,
@@ -639,7 +638,6 @@ export const adminRouter = createTRPCRouter({
         ctx.db.user.count(),
         ctx.db.account.count(),
         ctx.db.session.count(),
-        ctx.db.post.count(),
         ctx.db.apiKey.count(),
         ctx.db.webhookConfig.count(),
         ctx.db.verificationToken.count(),
@@ -650,7 +648,6 @@ export const adminRouter = createTRPCRouter({
         users: userCount * 0.5, // ~0.5KB per user
         accounts: accountCount * 0.3, // ~0.3KB per account
         sessions: sessionCount * 0.2, // ~0.2KB per session
-        posts: postCount * 0.4, // ~0.4KB per post
         apiKeys: apiKeyCount * 0.2, // ~0.2KB per API key
         webhooks: webhookCount * 0.3, // ~0.3KB per webhook
         verificationTokens: verificationTokenCount * 0.1, // ~0.1KB per token
@@ -664,7 +661,6 @@ export const adminRouter = createTRPCRouter({
           users: userCount,
           accounts: accountCount,
           sessions: sessionCount,
-          posts: postCount,
           apiKeys: apiKeyCount,
           webhooks: webhookCount,
           verificationTokens: verificationTokenCount,
@@ -782,7 +778,6 @@ export const adminRouter = createTRPCRouter({
             select: {
               accounts: true,
               sessions: true,
-              posts: true,
               apiKeys: true,
             }
           }
@@ -796,14 +791,12 @@ export const adminRouter = createTRPCRouter({
           averages: {
             accountsPerUser: 0,
             sessionsPerUser: 0,
-            postsPerUser: 0,
             apiKeysPerUser: 0,
           },
           distributions: {
             accounts: { min: 0, max: 0, median: 0 },
             sessions: { min: 0, max: 0, median: 0 },
-            posts: { min: 0, max: 0, median: 0 },
-            apiKeys: { min: 0, max: 0, median: 0 },
+              apiKeys: { min: 0, max: 0, median: 0 },
           }
         };
       }
@@ -811,13 +804,11 @@ export const adminRouter = createTRPCRouter({
       // Calculate totals with null safety
       const totalAccounts = users.reduce((sum, user) => sum + (user._count?.accounts ?? 0), 0);
       const totalSessions = users.reduce((sum, user) => sum + (user._count?.sessions ?? 0), 0);
-      const totalPosts = users.reduce((sum, user) => sum + (user._count?.posts ?? 0), 0);
       const totalApiKeys = users.reduce((sum, user) => sum + (user._count?.apiKeys ?? 0), 0);
       
       // Sort counts for median calculation with null safety
       const accountCounts = [...users.map(u => u._count?.accounts ?? 0)].sort((a, b) => a - b);
       const sessionCounts = [...users.map(u => u._count?.sessions ?? 0)].sort((a, b) => a - b);
-      const postCounts = [...users.map(u => u._count?.posts ?? 0)].sort((a, b) => a - b);
       const apiKeyCounts = [...users.map(u => u._count?.apiKeys ?? 0)].sort((a, b) => a - b);
       
       // Calculate median (middle value)
@@ -830,7 +821,6 @@ export const adminRouter = createTRPCRouter({
         averages: {
           accountsPerUser: totalAccounts / totalUsers,
           sessionsPerUser: totalSessions / totalUsers,
-          postsPerUser: totalPosts / totalUsers,
           apiKeysPerUser: totalApiKeys / totalUsers,
         },
         distributions: {
@@ -843,11 +833,6 @@ export const adminRouter = createTRPCRouter({
             min: sessionCounts[0],
             max: sessionCounts[sessionCounts.length - 1],
             median: median(sessionCounts),
-          },
-          posts: {
-            min: postCounts[0],
-            max: postCounts[postCounts.length - 1],
-            median: median(postCounts),
           },
           apiKeys: {
             min: apiKeyCounts[0],
