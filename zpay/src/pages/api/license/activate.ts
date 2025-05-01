@@ -34,11 +34,11 @@ export default async function handler(
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
-  const { apiKey, usage, instanceId, version } = req.body;
+  const { apiKey, usage, monthlyUsage, instanceId, version } = req.body;
   try {
     const key = await validateApiKey(apiKey);
     // Prevent license issuance if usage is more than 0
-    if (key.usage > 250 || usage > 250) {
+    if (key.monthlyUsage > 250 || monthlyUsage > 250) {
       return res.status(403).json({ error: 'Usage limit exceeded for this API key' });
     }
     const now = Math.floor(Date.now() / 1000);
@@ -47,13 +47,13 @@ export default async function handler(
       licenseId: key.id,
       clientId: key.userId,
       tier: key.name || 'payg',
-      txCap: key.transactionFee?.toNumber?.() || 1000,
-      txUsed: 0, // TODO: Implement usage tracking
+      txCap: key.limit || 250,
+      txUsed: key.monthlyUsage || 0, // TODO: Implement usage tracking
       issuedAt: now,
       expiresAt,
       instanceId,
     };
-    console.log('payload', payload);
+    // console.log('payload', payload);
     const privateKey = fs.readFileSync(PRIVATE_KEY_PATH, 'utf8');
     const token = jwt.sign(payload, privateKey, {
       algorithm: 'RS256',

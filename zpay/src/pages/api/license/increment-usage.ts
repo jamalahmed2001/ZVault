@@ -25,13 +25,24 @@ export default async function handler(
     return res.status(405).json({ error: 'Method not allowed' });
   }
   const { apiKey, usage, monthlyUsage } = req.body;
-  console.log(apiKey, usage, monthlyUsage);
-  // if the user gives me diff numbers than what my webhook says its wrong 
+
   try {
     const key = await validateApiKey(apiKey);
+    let updateData = {};
+    if (
+      (typeof usage === 'number' && usage > key.usage) ||
+      (typeof monthlyUsage === 'number' && monthlyUsage > key.monthlyUsage)
+    ) {
+      updateData = {
+        usage: typeof usage === 'number' && usage > key.usage ? usage : { increment: 1 },
+        monthlyUsage: typeof monthlyUsage === 'number' && monthlyUsage > key.monthlyUsage ? monthlyUsage : { increment: 1 },
+      };
+    } else {
+      updateData = { usage: { increment: 1 }, monthlyUsage: { increment: 1 } };
+    }
     const updated = await db.apiKey.update({
       where: { id: key.id },
-      data: { usage: { increment: 1 }, monthlyUsage: { increment: 1 } },
+      data: updateData,
     });
     return res.status(200).json({ usage: updated.usage, monthlyUsage: updated.monthlyUsage });
   } catch (err: any) {

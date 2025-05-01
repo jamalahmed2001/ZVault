@@ -242,15 +242,15 @@ export default function Account() {
     switch (sectionId) {
       case "api-keys":
         return <ApiKeyManager initialApiKey="" onApiKeySelect={handleApiKeySelect} />;
-      case "webhooks":
-        return (
-          <WebhookManager 
-            initialApiKey={selectedApiKey}
-            onWebhookSelect={(url, secret) => {
-              // Handle selected webhook if needed
-            }} 
-          />
-        );
+      // case "webhooks":
+      //   return (
+      //     <WebhookManager 
+      //       initialApiKey={selectedApiKey}
+      //       onWebhookSelect={(url, secret) => {
+      //         // Handle selected webhook if needed
+      //       }} 
+      //     />
+      //   );
       case "transactions":
         return <TransactionLog initialApiKey={selectedApiKey} />;
       case "profile":
