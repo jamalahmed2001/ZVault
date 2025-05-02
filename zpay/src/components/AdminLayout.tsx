@@ -57,10 +57,9 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: HomeIcon },
     { name: "Users", href: "/admin/users", icon: UserIcon },
+    { name: "API Keys", href: "/admin/api-keys", icon: KeyIcon },
     { name: "Transactions", href: "/admin/transactions", icon: CurrencyDollarIcon },
     { name: "Analytics", href: "/admin/analytics", icon: ChartBarIcon },
-    { name: "Posts", href: "/admin/posts", icon: DocumentTextIcon },
-    { name: "Settings", href: "/admin/settings", icon: CogIcon },
   ];
 
   // Redirect if not authenticated

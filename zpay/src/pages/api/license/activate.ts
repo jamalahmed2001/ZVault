@@ -57,7 +57,7 @@ export default async function handler(
     const privateKey = fs.readFileSync(PRIVATE_KEY_PATH, 'utf8');
     const token = jwt.sign(payload, privateKey, {
       algorithm: 'RS256',
-      expiresIn: 24 * 60 * 60,
+      expiresIn: now + 24 * 60 * 60,
     });
     return res.status(200).json({ accessToken: token, expiresAt });
   } catch (err: any) {

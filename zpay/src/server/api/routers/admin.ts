@@ -1391,7 +1391,16 @@ export const adminRouter = createTRPCRouter({
         skip,
         take: input.limit,
         orderBy: { createdAt: "desc" },
-        include: {
+        select: {
+          id: true,
+          key: true,
+          name: true,
+          isActive: true,
+          createdAt: true,
+          updatedAt: true,
+          usage: true,
+          monthlyUsage: true,
+          limit: true,
           user: {
             select: {
               id: true,
@@ -1576,4 +1585,45 @@ export const adminRouter = createTRPCRouter({
       });
     }
   }),
+
+  // Update API Key
+  updateApiKey: adminProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        data: z.object({
+          name: z.string().optional(),
+          usage: z.number().int().min(0).optional(),
+          monthlyUsage: z.number().int().min(0).optional(),
+          limit: z.number().int().min(0).optional(),
+        }),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      try {
+        // Check if API key exists
+        const apiKey = await ctx.db.apiKey.findUnique({
+          where: { id: input.id },
+        });
+        if (!apiKey) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: "API key not found",
+          });
+        }
+        // Update API key
+        const updatedApiKey = await ctx.db.apiKey.update({
+          where: { id: input.id },
+          data: input.data,
+        });
+        return updatedApiKey;
+      } catch (error) {
+        if (error instanceof TRPCError) throw error;
+        console.error("Failed to update API key:", error);
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: error instanceof Error ? error.message : "Failed to update API key",
+        });
+      }
+    }),
 }); 

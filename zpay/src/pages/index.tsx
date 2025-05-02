@@ -114,14 +114,14 @@ export default function Home() {
     <>
       <Head>
         {/* --- Basic Meta Tags --- */}
-        <title>ZVault Automation | Privacy-Focused Shielding Infrastructure</title>
-        <meta name="description" content="Experience the future of secure and private automation with ZVault. Powered by Zcash for unmatched privacy. Simple integration, instant execution." />
+        <title>ZVault Self-Hosted | Private Automation on Your Infrastructure</title>
+        <meta name="description" content="Deploy ZVault on your own infrastructure. Self-hosted privacy automation with a Vite dashboard, TypeScript API, and one-time transactional containers. £500 license for 250 containers/month." />
         <link rel="icon" href="/favicon.ico" />
         <link rel="canonical" href="https://z-vault.vercel.app" /> {/* Replace with your actual domain */}
 
         {/* --- Open Graph Meta Tags (for Facebook, LinkedIn, etc.) --- */}
-        <meta property="og:title" content="ZVault Automation | Privacy-Focused Shielding Infrastructure" />
-        <meta property="og:description" content="Secure, private automation powered by Zcash. Simple setup, instant execution." />
+        <meta property="og:title" content="ZVault Self-Hosted | Private Automation on Your Infrastructure" />
+        <meta property="og:description" content="Deploy ZVault on your own infrastructure. Self-hosted privacy automation with a Vite dashboard, TypeScript API, and one-time transactional containers. £500 license for 250 containers/month." />
         <meta property="og:type" content="website" />
         <meta property="og:url" content="https://z-vault.vercel.app" /> {/* Replace with your actual domain */}
         <meta property="og:image" content="https://z-vault.vercel.app/og-image.png" /> {/* Replace with your OG image URL */}
@@ -130,8 +130,8 @@ export default function Home() {
 
         {/* --- Twitter Card Meta Tags --- */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content="ZVault Automation | Privacy-Focused Shielding Infrastructure" />
-        <meta name="twitter:description" content="Secure, private automation powered by Zcash. Simple setup, instant execution." />
+        <meta name="twitter:title" content="ZVault Self-Hosted | Private Automation on Your Infrastructure" />
+        <meta name="twitter:description" content="Deploy ZVault on your own infrastructure. Self-hosted privacy automation with a Vite dashboard, TypeScript API, and one-time transactional containers. £500 license for 250 containers/month." />
         <meta name="twitter:image" content="https://z-vault.vercel.app/twitter-image.png" /> {/* Replace with your Twitter image URL */}
         {/* Optional: <meta name="twitter:site" content="@YourTwitterHandle" /> */}
         {/* Optional: <meta name="twitter:creator" content="@CreatorTwitterHandle" /> */}
@@ -177,24 +177,32 @@ export default function Home() {
                 }}
                 variants={fadeInUp}
               >
-                🚀 Introducing ZVault Automation
+                🚀 Introducing ZVault AutoShield
               </motion.div>
               <motion.h1
                 className="mb-8 text-4xl font-extrabold tracking-tight sm:text-5xl md:text-6xl lg:text-7xl"
                 style={{ color: "var(--color-primary-foreground)" }}
                 variants={fadeInUp}
               >
-                The <span style={{ color: "var(--color-accent)" }}>Shielded</span> Standard for Crypto Automation
+                Accept <span style={{ color: "var(--color-accent)" }}>Shielded Zcash</span> <br />
+                <span className="block mt-2">On Your Infrastructure</span>
               </motion.h1>
               <motion.p
-                className="mb-12 text-lg md:text-xl lg:text-2xl mx-auto max-w-3xl"
+                className="mb-6 text-lg md:text-xl lg:text-2xl mx-auto max-w-3xl"
                 style={{ 
                   color: "var(--color-foreground)",
-                  textShadow: "0 1px 2px rgba(0,0,0,0.1)" 
+                  textShadow: "0 1px 2px rgba(0,0,0,0.1)"
                 }}
                 variants={fadeInUp}
               >
-                Leverage the power of Zcash for truly private, secure, and seamless automation. Simple signup. Effortless integration. Simply secure.
+                ZVault AutoShield empowers your business to accept shielded Zcash (ZEC) payments—fully auditable for compliance, yet uncompromising on customer privacy. All data and processing remain exclusively on your infrastructure. No third-party risk. No data leakage.
+              </motion.p>
+              <motion.p
+                className="mb-10 text-base md:text-lg mx-auto max-w-2xl"
+                style={{ color: "var(--color-accent)" }}
+                variants={fadeInUp}
+              >
+                Built for financial and technical leaders: granular audit trails, Vite-powered dashboard, and a robust TypeScript API for one-time-use, isolated payment containers. Instant Zcash payouts—no third-party custody, no settlement delays. £500/month license includes 250 shielded payment automations.
               </motion.p>
               <motion.div
                 className="flex flex-col items-center justify-center gap-5 sm:flex-row"
@@ -208,7 +216,7 @@ export default function Home() {
                     color: "var(--color-accent-foreground)"
                   }}
                 >
-                  {sessionData ? "Access Dashboard" : "Get Started Free"}
+                  {sessionData ? "Access Dashboard" : "Get Started (License Required)"}
                 </button>
                 <Link
                   href="#features"
@@ -267,9 +275,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Key Benefits</span>
-              <h2 className={headingClasses.sectionLight}>Why ZVault is Different</h2>
+              <h2 className={headingClasses.sectionLight}>Why Self-Host ZVault?</h2>
               <p className="mx-auto max-w-3xl text-lg text-[var(--color-foreground-dark-alt)] mt-4">
-                Go beyond standard solutions. Embrace unparalleled privacy, speed, and simplicity for your automation tasks.
+                Accept shielded Zcash payments with full auditability and compliance—while keeping your customers' privacy first. All data and automation stays on your infrastructure, never a third party.
               </p>
             </motion.div>
 
@@ -277,7 +285,7 @@ export default function Home() {
               className="grid grid-cols-1 gap-8 md:grid-cols-3"
               variants={staggerContainer}
             >
-              {/* Feature Card 1: Total Privacy */}
+              {/* Feature Card 1: Private by Design */}
               <motion.div
                 className={cardClassesLight}
                 variants={fadeInUp}
@@ -290,13 +298,13 @@ export default function Home() {
                   }}>
                    <LockClosedIcon className="h-8 w-8" /> {/* Replaced SVG with Heroicon */}
                 </div>
-                <h3 className={headingClasses.cardLight}>Unbreakable Privacy</h3>
+                <h3 className={headingClasses.cardLight}>Private by Design</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  Utilizes Zcash's zero-knowledge proofs (zk-SNARKs) to shield transaction details. Sender, receiver, and amount remain confidential.
+                  Accept shielded Zcash payments with complete privacy for your customers. All transactions are fully auditable for your business, but no data ever leaves your infrastructure.
                 </p>
               </motion.div>
 
-              {/* Feature Card 2: Instant Payouts */}
+              {/* Feature Card 2: Instant, Isolated Containers */}
               <motion.div
                 className={cardClassesLight}
                 variants={fadeInUp}
@@ -309,13 +317,13 @@ export default function Home() {
                   }}>
                   <BoltIcon className="h-8 w-8" />
                 </div>
-                <h3 className={headingClasses.cardLight}>Direct & Instant Payouts</h3>
+                <h3 className={headingClasses.cardLight}>Instant, Isolated Containers</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  No intermediaries holding your funds. Payments are sent directly to your designated Zcash shielded address upon confirmation.
+                  Each Zcash payment is processed in a one-time-use, isolated container—ensuring privacy and auditability, with no cross-contamination or third-party risk.
                 </p>
               </motion.div>
 
-              {/* Feature Card 3: Simple Integration */}
+              {/* Feature Card 3: Vite Dashboard & API */}
               <motion.div
                 className={cardClassesLight}
                 variants={fadeInUp}
@@ -328,9 +336,9 @@ export default function Home() {
                   }}>
                   <CodeBracketIcon className="h-8 w-8" />
                 </div>
-                <h3 className={headingClasses.cardLight}>Effortless API Integration</h3>
+                <h3 className={headingClasses.cardLight}>Vite Dashboard & API</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  Get up and running quickly with our developer-friendly API and clear documentation. Focus on your core business, not complex automation logic.
+                  View transaction history, audit payments, and configure your API—all on your own infrastructure. No third-party dashboards or data leaks.
                 </p>
               </motion.div>
             </motion.div>
@@ -349,22 +357,22 @@ export default function Home() {
               <motion.div className="lg:w-1/2" variants={fadeInUp}>
                 <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Security First</span>
                 {/* Removed redundant icon, using list icons below */}
-                <h2 className={headingClasses.section}>Security Through Shielding</h2>
+                <h2 className={headingClasses.section}>Security Through Self-Hosting</h2>
                 <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--color-foreground-alt)" }}>
-                  ZVault is built upon the battle-tested Zcash protocol, renowned for its pioneering use of zk-SNARKs. This cryptographic breakthrough allows task verification without revealing any sensitive data, providing mathematical certainty of privacy.
+                  ZVault AutoShield ensures all Zcash payment data and automation stays on your infrastructure. Shielded transactions are auditable for your business, but never expose your customers to third parties.
                 </p>
                 <ul className="space-y-4" style={{ color: "var(--color-foreground-alt)" }}>
                   <li className="flex items-start">
                     <ShieldCheckIcon className="h-6 w-6 mr-4 mt-1 flex-shrink-0 text-[var(--color-accent)]" />
-                    <span>Confidential transactions protect your financial data from public exposure.</span>
+                    <span>All Zcash payment data and automation is processed on your infrastructure—never a third party.</span>
                   </li>
                   <li className="flex items-start">
                     <ShieldCheckIcon className="h-6 w-6 mr-4 mt-1 flex-shrink-0 text-[var(--color-accent)]" />
-                    <span>Reduced risk of data breaches targeting payment information.</span>
+                    <span>One-time-use containers ensure each payment is isolated, private, and auditable.</span>
                   </li>
                   <li className="flex items-start">
                     <ShieldCheckIcon className="h-6 w-6 mr-4 mt-1 flex-shrink-0 text-[var(--color-accent)]" />
-                    <span>Compliance with privacy standards by default.</span>
+                    <span>Meets privacy and compliance requirements by default, with no external dependencies or data sharing.</span>
                   </li>
                 </ul>
                 <div className="mt-10"> {/* Increased margin top */}
@@ -416,9 +424,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Simple Process</span>
-              <h2 className={headingClasses.sectionLight}>Start Automating with ZVault in Minutes</h2>
+              <h2 className={headingClasses.sectionLight}>Get Started with ZVault AutoShield</h2>
               <p className="mx-auto max-w-2xl text-lg mt-4 text-[var(--color-foreground-dark-alt)]">
-                Our streamlined process gets you ready for private automation quickly.
+                Deploy in minutes. Accept shielded Zcash payments with full auditability and privacy for your customers. All data stays on your infrastructure.
               </p>
             </motion.div>
 
@@ -443,9 +451,9 @@ export default function Home() {
                       borderColor: "var(--color-primary)"
                     }}>1</div>
                   <CogIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" />
-                  <h3 className={headingClasses.cardLight}>Sign Up & Configure</h3>
+                  <h3 className={headingClasses.cardLight}>Deploy & Configure</h3>
                   <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Create your ZVault account. In the dashboard, enter your Zcash shielded address (zs...) where you'll receive automation results.
+                    Purchase your license and deploy ZVault AutoShield on your own infrastructure. Use the dashboard to configure your Zcash shielded address and API settings—all private, all yours.
                   </p>
                 </div>
               </motion.div>
@@ -465,9 +473,9 @@ export default function Home() {
                        borderColor: "var(--color-accent)"
                      }}>2</div>
                    <CodeBracketIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-accent)]" />
-                   <h3 className={headingClasses.cardLight}>Get API Key</h3>
+                   <h3 className={headingClasses.cardLight}>Get Your API Key</h3>
                    <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Generate your unique API key from the dashboard. Keep it secure – this authorizes your automation requests.
+                    Generate your API key from the dashboard. This key authorizes your Zcash payment automations and tracks your container usage (250/month included). All data stays private.
                    </p>
                  </div>
               </motion.div>
@@ -487,9 +495,9 @@ export default function Home() {
                       borderColor: "var(--color-primary)"
                     }}>3</div>
                   <BoltIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" />
-                  <h3 className={headingClasses.cardLight}>Integrate & Launch</h3>
+                  <h3 className={headingClasses.cardLight}>Create Containers & Automate</h3>
                   <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Use our API docs to integrate the ZVault automation endpoints. Start executing private Zcash automation tasks instantly!
+                    Use the TypeScript API to create one-time transactional containers for each Zcash payment. All processing and audit logs remain on your infrastructure.
                   </p>
                 </div>
               </motion.div>
@@ -509,9 +517,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Perfect For</span>
-              <h2 className={headingClasses.section}>Who Benefits from ZVault?</h2>
+              <h2 className={headingClasses.section}>Who Should Self-Host ZVault?</h2>
               <p className="mx-auto max-w-3xl text-lg mt-4" style={{ color: "var(--color-foreground-alt)" }}>
-                ZVault is ideal for any individual or business valuing financial privacy and security.
+                ZVault AutoShield is ideal for businesses and organizations that need to accept shielded Zcash payments with full auditability, while keeping customer privacy first and all data on their own infrastructure.
               </p>
             </motion.div>
 
@@ -532,9 +540,9 @@ export default function Home() {
                      <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5A.75.75 0 0 1 14.25 12h7.5a.75.75 0 0 1 .75.75-7.5 7.5 0 0 1-7.5 7.5h-7.5a.75.75 0 0 1-.75-.75V7.5a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 .75.75v7.5Z" />
                   </svg>
                  </div>
-                 <h3 className={headingClasses.card}>E-commerce Stores</h3>
+                 <h3 className={headingClasses.card}>Enterprises & Fintechs</h3>
                  <p className="leading-relaxed min-h-[6rem]" style={{ color: "var(--color-foreground-alt)" }}>
-                  Protect customer transaction data and your revenue streams from public scrutiny. Offer a truly private checkout option.
+                  Accept shielded Zcash payments with full auditability and compliance. All payment data and automation stays on your infrastructure for maximum privacy and control.
                  </p>
               </motion.div>
 
@@ -554,9 +562,9 @@ export default function Home() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
                     </svg>
                  </div>
-                 <h3 className={headingClasses.card}>Freelancers & Creators</h3>
+                 <h3 className={headingClasses.card}>Agencies & SaaS Providers</h3>
                  <p className="leading-relaxed min-h-[6rem]" style={{ color: "var(--color-foreground-alt)" }}>
-                   Receive payments privately without exposing your income details or client relationships on a public ledger.
+                   Offer private, transactional automation for your clients. Keep all data and logic between you and your clients on your own infrastructure. Accept shielded Zcash payments with auditability and privacy.
                  </p>
                </motion.div>
 
@@ -574,9 +582,9 @@ export default function Home() {
                    {/* Replaced SVG with Heroicon */}
                    <LockClosedIcon className="w-8 h-8" />
                  </div>
-                 <h3 className={headingClasses.card}>Privacy Advocates</h3> {/* Changed title slightly */}
+                 <h3 className={headingClasses.card}>Privacy-First Teams</h3>
                  <p className="leading-relaxed min-h-[6rem]" style={{ color: "var(--color-foreground-alt)" }}>
-                   Exercise your right to financial privacy. Protect your activity from surveillance and data aggregation.
+                   Ensure your Zcash payment automation and transactions are never exposed to third parties. Full auditability for your business, full privacy for your customers.
                  </p>
                </motion.div>
             </motion.div>
@@ -590,7 +598,7 @@ export default function Home() {
                    color: "var(--color-accent-foreground)"
                  }}
               >
-                {sessionData ? "Access Dashboard" : "Get Started"} <ArrowRightIcon className="ml-2 h-5 w-5" />
+                {sessionData ? "Access Dashboard" : "Buy License (£500)"} <ArrowRightIcon className="ml-2 h-5 w-5" />
               </button>
             </motion.div>
           </div>
@@ -695,12 +703,12 @@ export default function Home() {
               <h2
                 className="mb-8 text-3xl font-bold md:text-4xl lg:text-5xl text-[var(--color-foreground-dark)]"
               >
-                Ready to <span style={{ color: "var(--color-accent)" }}>Unlock</span> True Privacy in Automation?
+                Ready to <span style={{ color: "var(--color-accent)" }}>Unlock</span> Private, Auditable Zcash Payments?
               </h2>
               <p
                 className="mb-12 text-lg md:text-xl mx-auto max-w-2xl text-[var(--color-foreground-dark-alt)]"
               >
-                Join ZVault Automation today and step into the future of secure, private automation powered by Zcash. No compromises, just confidentiality.
+                Join ZVault AutoShield and accept shielded Zcash payments with full auditability and privacy. All data and automation stays on your infrastructure—no third parties, ever.
               </p>
               <motion.button
                 onClick={sessionData ? () => void signOut() : () => void signIn()}
@@ -712,7 +720,7 @@ export default function Home() {
                 whileHover={{ scale: 1.05, transition: { duration: 0.2 } }}
                 whileTap={{ scale: 0.95 }}
               >
-                {sessionData ? "Go to Your Dashboard" : "Create Your Free Account"}
+                {sessionData ? "Go to Your Dashboard" : "Buy License (£500)"}
                 <ArrowRightIcon className="inline-block h-6 w-6 ml-3"/>
               </motion.button>
             </motion.div>
