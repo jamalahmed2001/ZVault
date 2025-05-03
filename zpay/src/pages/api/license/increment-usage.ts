@@ -30,21 +30,21 @@ export default async function handler(
     const key = await validateApiKey(apiKey);
     let updateData = {};
     if (
-      (typeof usage === 'number' && usage > key.usage) ||
+      (typeof usage === 'number' && usage > key.totalUsage) ||
       (typeof monthlyUsage === 'number' && monthlyUsage > key.monthlyUsage)
     ) {
       updateData = {
-        usage: typeof usage === 'number' && usage > key.usage ? usage : { increment: 1 },
+        totalUsage: typeof usage === 'number' && usage > key.totalUsage ? usage : { increment: 1 },
         monthlyUsage: typeof monthlyUsage === 'number' && monthlyUsage > key.monthlyUsage ? monthlyUsage : { increment: 1 },
       };
     } else {
-      updateData = { usage: { increment: 1 }, monthlyUsage: { increment: 1 } };
+      updateData = { totalUsage: { increment: 1 }, monthlyUsage: { increment: 1 } };
     }
     const updated = await db.apiKey.update({
       where: { id: key.id },
       data: updateData,
     });
-    return res.status(200).json({ usage: updated.usage, monthlyUsage: updated.monthlyUsage });
+    return res.status(200).json({ totalUsage: updated.totalUsage, monthlyUsage: updated.monthlyUsage });
   } catch (err: any) {
     return res.status(401).json({ error: err.message });
   }

@@ -18,7 +18,7 @@ import {
 import { signOut, useSession } from "next-auth/react";
 import { api } from "@/utils/api";
 import Head from "next/head";
-
+import Image from "next/image";
 interface AdminLayoutProps {
   children: ReactNode;
   title: string;
@@ -56,9 +56,8 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
   // Enhanced navigation with ZCash section
   const navigation = [
     { name: "Dashboard", href: "/admin", icon: HomeIcon },
-    { name: "Users", href: "/admin/users", icon: UserIcon },
+    { name: "Users", href: "/admin/user-management", icon: UserIcon },
     { name: "API Keys", href: "/admin/api-keys", icon: KeyIcon },
-    { name: "Transactions", href: "/admin/transactions", icon: CurrencyDollarIcon },
     { name: "Analytics", href: "/admin/analytics", icon: ChartBarIcon },
   ];
 
@@ -125,7 +124,7 @@ export default function AdminLayout({ children, title }: AdminLayoutProps) {
               
               <div className="flex items-center">
                 {session?.user?.image ? (
-                  <img 
+                  <Image 
                     src={session.user.image} 
                     alt="Profile" 
                     className="w-8 h-8 rounded-full"

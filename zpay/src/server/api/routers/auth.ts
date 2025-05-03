@@ -190,8 +190,7 @@ export const authRouter = createTRPCRouter({
             first_name: true,
             last_name: true,
             phone: true,
-            zcashAddress: true,
-            webhookConfig: true
+            stripeCustomerId: true,
           }
         });
         
@@ -220,6 +219,7 @@ export const authRouter = createTRPCRouter({
       z.object({
         zcashAddress: z.string().optional(),
         notificationsEnabled: z.boolean().optional(),
+        stripeCustomerId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -228,6 +228,7 @@ export const authRouter = createTRPCRouter({
           where: { id: ctx.session.user.id },
           data: {
             zcashAddress: input.zcashAddress,
+            ...(input.stripeCustomerId ? { stripeCustomerId: input.stripeCustomerId } : {}),
             // In a real app, you might store notificationsEnabled in a separate table or column
           },
         });
@@ -362,112 +363,6 @@ export const authRouter = createTRPCRouter({
       }
     }),
     
-  // Update webhook configuration
-  updateWebhookConfig: protectedProcedure
-    .input(
-      z.object({
-        url: z.string().url(),
-        secret: z.string().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Generate a webhook secret if not provided
-        const secret = input.secret || 
-          `whsec_${Math.random().toString(36).substring(2, 15)}`;
-        
-        // Upsert webhook config (update if exists, create if not)
-        const webhookConfig = await ctx.db.webhookConfig.upsert({
-          where: {
-            userId: ctx.session.user.id,
-          },
-          update: {
-            url: input.url,
-            secret: input.secret ? input.secret : undefined, // Only update if provided
-          },
-          create: {
-            url: input.url,
-            secret,
-            userId: ctx.session.user.id,
-          },
-        });
-        
-        return { 
-          success: true,
-          webhookConfig: {
-            url: webhookConfig.url,
-            secret: webhookConfig.secret,
-          }
-        };
-      } catch (error) {
-        console.error("Failed to update webhook config:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to update webhook config",
-        });
-      }
-    }),
-    
-  // Get webhook configuration
-  getWebhookConfig: protectedProcedure
-    .query(async ({ ctx }) => {
-      try {
-        const webhookConfig = await ctx.db.webhookConfig.findUnique({
-          where: {
-            userId: ctx.session.user.id,
-          },
-        });
-        
-        return webhookConfig;
-      } catch (error) {
-        console.error("Failed to fetch webhook configuration:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch webhook configuration",
-        });
-      }
-    }),
-    
-  // Test webhook
-  testWebhook: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      try {
-        const webhookConfig = await ctx.db.webhookConfig.findUnique({
-          where: {
-            userId: ctx.session.user.id,
-          },
-        });
-        
-        if (!webhookConfig) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "No webhook configuration found",
-          });
-        }
-        
-        // In a real implementation, you would actually send a test call
-        // to the webhook URL and validate the response
-        // This is a simplified example
-        
-        // Simulate webhook test
-        const testSuccessful = true; // In reality, you would check the response
-        
-        return { 
-          success: testSuccessful,
-          message: testSuccessful 
-            ? "Webhook test successful! Your endpoint responded with a 200 OK status." 
-            : "Webhook test failed. Your endpoint returned an error or timed out."
-        };
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        
-        console.error("Failed to test webhook:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to test webhook",
-        });
-      }
-    }),
 
   // Request password reset
   requestPasswordReset: publicProcedure
@@ -606,177 +501,6 @@ export const authRouter = createTRPCRouter({
       });
       
       return { success: true };
-    }),
-
-  // Generate Webhook Secret
-  generateWebhookSecret: protectedProcedure
-    .mutation(async () => {
-      try {
-        // Generate a highly secure webhook secret with prefix
-        // Using 32 bytes (256 bits) of entropy for strong security
-        const secretPrefix = "whsec_";
-        
-        // Generate cryptographically secure random bytes
-        const randomBytes = crypto.randomBytes(32);
-        
-        // Convert to URL-safe base64 string (removing padding)
-        const randomPart = randomBytes.toString('base64url');
-        
-        // Create the final webhook secret
-        const secret = secretPrefix + randomPart;
-        
-        // Validate the generated secret meets minimum security requirements
-        if (secret.length < 45) { // prefix (6) + at least 39 chars from base64url encoding
-          throw new Error("Generated webhook secret does not meet minimum security requirements");
-        }
-        
-        return { 
-          success: true,
-          secret: secret
-        };
-      } catch (error) {
-        console.error("Failed to generate webhook secret:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to generate webhook secret",
-        });
-      }
-    }),
-
-  // Save Webhook Configuration
-  saveWebhookConfig: protectedProcedure
-    .input(
-      z.object({
-        url: z.string().url(),
-        secret: z.string().min(1),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Check if the user already has a webhook configuration
-        const existingConfig = await ctx.db.webhookConfig.findUnique({
-          where: {
-            userId: ctx.session.user.id,
-          },
-        });
-        
-        let webhookConfig;
-        
-        if (existingConfig) {
-          // Update existing configuration
-          webhookConfig = await ctx.db.webhookConfig.update({
-            where: {
-              id: existingConfig.id,
-            },
-            data: {
-              url: input.url,
-              secret: input.secret,
-              updatedAt: new Date(),
-            },
-          });
-        } else {
-          // Create new configuration
-          webhookConfig = await ctx.db.webhookConfig.create({
-            data: {
-              url: input.url,
-              secret: input.secret,
-              userId: ctx.session.user.id,
-            },
-          });
-        }
-        
-        return { 
-          success: true,
-          webhookConfig: webhookConfig
-        };
-      } catch (error) {
-        console.error("Failed to save webhook configuration:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to save webhook configuration",
-        });
-      }
-    }),
-
-  // Get user transactions with filtering options
-  getTransactions: protectedProcedure
-    .input(
-      z.object({
-        status: z.enum(['PENDING', 'PROCESSING', 'COMPLETED', 'FAILED', 'REVERSED']).optional(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-        clientUserId: z.string().optional(),
-        invoiceId: z.string().optional(),
-        limit: z.number().min(1).max(100).default(20),
-        cursor: z.string().optional(), // For pagination
-        sortDirection: z.enum(["asc", "desc"]).default("desc"),
-      }).optional(),
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const filters: any = {
-          userId: ctx.session.user.id,
-        };
-
-        // Apply filters if provided
-        if (input?.status) {
-          filters.status = input.status;
-        }
-
-        if (input?.clientUserId) {
-          filters.clientUserId = input.clientUserId;
-        }
-
-        if (input?.invoiceId) {
-          filters.invoiceId = input.invoiceId;
-        }
-
-        // Date range filter
-        if (input?.startDate || input?.endDate) {
-          filters.createdAt = {};
-          
-          if (input?.startDate) {
-            filters.createdAt.gte = input.startDate;
-          }
-          
-          if (input?.endDate) {
-            filters.createdAt.lte = input.endDate;
-          }
-        }
-
-        // Setup for cursor-based pagination
-        const take = input?.limit ?? 20;
-        const cursor = input?.cursor ? { id: input.cursor } : undefined;
-
-        // Fetch transactions with filters and pagination
-        const transactions = await ctx.db.transaction.findMany({
-          where: filters,
-          take: take + 1, // Get one extra to know if there are more
-          cursor,
-          orderBy: {
-            createdAt: input?.sortDirection ?? "desc",
-          },
-        });
-
-        // Check if there are more results
-        let nextCursor: string | undefined = undefined;
-        if (transactions.length > take) {
-          const nextItem = transactions.pop();
-          nextCursor = nextItem?.id;
-        }
-
-        return { 
-          transactions,
-          nextCursor,
-          totalCount: await ctx.db.transaction.count({ where: filters }),
-        };
-      } catch (error) {
-        console.error("Failed to fetch transactions:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch transactions",
-        });
-      }
     }),
 
 }); 

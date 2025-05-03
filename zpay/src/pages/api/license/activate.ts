@@ -47,7 +47,7 @@ export default async function handler(
       licenseId: key.id,
       clientId: key.userId,
       tier: key.name || 'payg',
-      txCap: key.limit || 250,
+      txCap: key.usageLimit || 250,
       txUsed: key.monthlyUsage || 0, // TODO: Implement usage tracking
       issuedAt: now,
       expiresAt,

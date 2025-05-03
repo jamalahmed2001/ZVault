@@ -50,6 +50,7 @@ export const adminRouter = createTRPCRouter({
       const users = await ctx.db.user.findMany({
         select: {
           id: true,
+          name: true,
           email: true,
           username: true,
           first_name: true,
@@ -58,8 +59,12 @@ export const adminRouter = createTRPCRouter({
           zcashAddress: true,
           isAdmin: true,
           emailVerified: true,
+          image: true,
           createdAt: true,
           updatedAt: true,
+          resetToken: true,
+          resetTokenExpiry: true,
+          stripeCustomerId: true,
           apiKeys: {
             select: {
               id: true,
@@ -67,12 +72,11 @@ export const adminRouter = createTRPCRouter({
               name: true,
               isActive: true,
               createdAt: true,
-            },
-          },
-          webhookConfig: {
-            select: {
-              url: true,
-              isActive: true,
+              updatedAt: true,
+              transactionFee: true,
+              totalUsage: true,
+              monthlyUsage: true,
+              usageLimit: true,
             },
           },
         },
@@ -100,6 +104,7 @@ export const adminRouter = createTRPCRouter({
           where: { id: input.userId },
           select: {
             id: true,
+            name: true,
             email: true,
             username: true,
             first_name: true,
@@ -108,8 +113,12 @@ export const adminRouter = createTRPCRouter({
             zcashAddress: true,
             isAdmin: true,
             emailVerified: true,
+            image: true,
             createdAt: true,
             updatedAt: true,
+            resetToken: true,
+            resetTokenExpiry: true,
+            stripeCustomerId: true,
             apiKeys: {
               select: {
                 id: true,
@@ -117,15 +126,11 @@ export const adminRouter = createTRPCRouter({
                 name: true,
                 isActive: true,
                 createdAt: true,
+                updatedAt: true,
                 transactionFee: true,
-              },
-            },
-            webhookConfig: {
-              select: {
-                id: true,
-                url: true,
-                secret: true,
-                isActive: true,
+                totalUsage: true,
+                monthlyUsage: true,
+                usageLimit: true,
               },
             },
           },
@@ -162,6 +167,7 @@ export const adminRouter = createTRPCRouter({
           phone: z.string().optional(),
           zcashAddress: z.string().optional(),
           isAdmin: z.boolean().optional(),
+          stripeCustomerId: z.string().optional(),
         }),
       }),
     )
@@ -225,6 +231,7 @@ export const adminRouter = createTRPCRouter({
             phone: true,
             zcashAddress: true,
             isAdmin: true,
+            stripeCustomerId: true,
           },
         });
 
@@ -291,8 +298,10 @@ export const adminRouter = createTRPCRouter({
         where: { isActive: true },
       });
 
-      // Count webhook configurations
-      const webhookConfigs = await ctx.db.webhookConfig.count();
+      // Count active sessions as an alternative metric
+      const activeSessions = await ctx.db.session.count({
+        where: { expires: { gte: new Date() } },
+      });
 
       // Get users registered in the last 30 days
       const thirtyDaysAgo = new Date();
@@ -309,7 +318,7 @@ export const adminRouter = createTRPCRouter({
       return {
         totalUsers,
         activeApiKeys,
-        webhookConfigs,
+        activeSessions,
         newUsers,
       };
     } catch (error) {
@@ -394,6 +403,7 @@ export const adminRouter = createTRPCRouter({
         zcashAddress: z.string().optional(),
         isAdmin: z.boolean().optional().default(false),
         password: z.string().min(8),
+        stripeCustomerId: z.string().optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -447,6 +457,7 @@ export const adminRouter = createTRPCRouter({
             password: hashedPassword,
             zcashAddress: input.zcashAddress,
             isAdmin: input.isAdmin,
+            stripeCustomerId: input.stripeCustomerId,
             accounts: {
               create: {
                 type: "credentials",
@@ -463,6 +474,7 @@ export const adminRouter = createTRPCRouter({
             last_name: true,
             zcashAddress: true,
             isAdmin: true,
+            stripeCustomerId: true,
           },
         });
 
@@ -632,14 +644,12 @@ export const adminRouter = createTRPCRouter({
         accountCount,
         sessionCount,
         apiKeyCount,
-        webhookCount,
         verificationTokenCount,
       ] = await Promise.all([
         ctx.db.user.count(),
         ctx.db.account.count(),
         ctx.db.session.count(),
         ctx.db.apiKey.count(),
-        ctx.db.webhookConfig.count(),
         ctx.db.verificationToken.count(),
       ]);
       
@@ -649,7 +659,6 @@ export const adminRouter = createTRPCRouter({
         accounts: accountCount * 0.3, // ~0.3KB per account
         sessions: sessionCount * 0.2, // ~0.2KB per session
         apiKeys: apiKeyCount * 0.2, // ~0.2KB per API key
-        webhooks: webhookCount * 0.3, // ~0.3KB per webhook
         verificationTokens: verificationTokenCount * 0.1, // ~0.1KB per token
       };
       
@@ -662,7 +671,6 @@ export const adminRouter = createTRPCRouter({
           accounts: accountCount,
           sessions: sessionCount,
           apiKeys: apiKeyCount,
-          webhooks: webhookCount,
           verificationTokens: verificationTokenCount,
         },
         storageEstimates: {
@@ -850,425 +858,6 @@ export const adminRouter = createTRPCRouter({
     }
   }),
 
-  // Get all transactions with pagination and filters
-  getAllTransactions: adminProcedure
-    .input(
-      z.object({
-        page: z.number().min(1).default(1),
-        limit: z.number().min(1).max(100).default(10),
-        status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "REVERSED"]).optional(),
-        userId: z.string().optional(),
-        startDate: z.date().optional(),
-        endDate: z.date().optional(),
-        sortBy: z.enum(["createdAt", "amount", "status", "completedAt"]).default("createdAt"),
-        sortOrder: z.enum(["asc", "desc"]).default("desc"),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const {
-          page,
-          limit,
-          status,
-          userId,
-          startDate,
-          endDate,
-          sortBy,
-          sortOrder,
-        } = input;
-
-        // Build filter conditions
-        const where: any = {};
-        
-        if (status) {
-          where.status = status;
-        }
-        
-        if (userId) {
-          where.userId = userId;
-        }
-        
-        if (startDate || endDate) {
-          where.createdAt = {};
-          if (startDate) {
-            where.createdAt.gte = startDate;
-          }
-          if (endDate) {
-            where.createdAt.lte = endDate;
-          }
-        }
-
-        // Count total transactions with these filters
-        const totalCount = await ctx.db.transaction.count({ where });
-        
-        // Calculate pagination values
-        const skip = (page - 1) * limit;
-        const totalPages = Math.ceil(totalCount / limit);
-        
-        // Fetch transactions with user information
-        const transactions = await ctx.db.transaction.findMany({
-          where,
-          orderBy: {
-            [sortBy]: sortOrder,
-          },
-          skip,
-          take: limit,
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                username: true,
-                first_name: true,
-                last_name: true,
-              },
-            },
-          },
-        });
-
-        return {
-          transactions,
-          pagination: {
-            total: totalCount,
-            page,
-            limit,
-            totalPages,
-          },
-        };
-      } catch (error) {
-        console.error("Failed to fetch transactions:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch transactions",
-        });
-      }
-    }),
-
-  // Get transaction by ID
-  getTransactionById: adminProcedure
-    .input(z.object({ transactionId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      try {
-        const transaction = await ctx.db.transaction.findUnique({
-          where: { id: input.transactionId },
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                username: true,
-                first_name: true,
-                last_name: true,
-                zcashAddress: true,
-              },
-            },
-          },
-        });
-
-        if (!transaction) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Transaction not found",
-          });
-        }
-
-        return transaction;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        console.error("Failed to fetch transaction:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch transaction",
-        });
-      }
-    }),
-
-  // Update transaction status
-  updateTransactionStatus: adminProcedure
-    .input(
-      z.object({
-        transactionId: z.string(),
-        status: z.enum(["PENDING", "PROCESSING", "COMPLETED", "FAILED", "REVERSED"]),
-        completedAt: z.date().optional(),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Check if transaction exists
-        const transactionExists = await ctx.db.transaction.findUnique({
-          where: { id: input.transactionId },
-        });
-
-        if (!transactionExists) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Transaction not found",
-          });
-        }
-
-        // Prepare update data
-        const updateData: any = {
-          status: input.status,
-        };
-
-        // If status is COMPLETED and completedAt is not provided, set it to now
-        if (input.status === "COMPLETED" && !input.completedAt) {
-          updateData.completedAt = new Date();
-        } else if (input.status !== "COMPLETED") {
-          // If status is not COMPLETED, set completedAt to null
-          updateData.completedAt = null;
-        } else if (input.completedAt) {
-          // If completedAt is provided, use it
-          updateData.completedAt = input.completedAt;
-        }
-
-        // Update transaction
-        const updatedTransaction = await ctx.db.transaction.update({
-          where: { id: input.transactionId },
-          data: updateData,
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                username: true,
-              },
-            },
-          },
-        });
-
-        return updatedTransaction;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        console.error("Failed to update transaction status:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to update transaction status",
-        });
-      }
-    }),
-
-  // Get transaction statistics
-  getTransactionStats: adminProcedure
-    .input(
-      z.object({
-        period: z.enum(["day", "week", "month", "year"]).default("month"),
-      }),
-    )
-    .query(async ({ ctx, input }) => {
-      try {
-        const now = new Date();
-        
-        // Determine the start date based on the period
-        let startDate: Date;
-        switch (input.period) {
-          case "day":
-            startDate = new Date(now);
-            startDate.setDate(startDate.getDate() - 1);
-            break;
-          case "week":
-            startDate = new Date(now);
-            startDate.setDate(startDate.getDate() - 7);
-            break;
-          case "year":
-            startDate = new Date(now);
-            startDate.setFullYear(startDate.getFullYear() - 1);
-            break;
-          case "month":
-          default:
-            startDate = new Date(now);
-            startDate.setMonth(startDate.getMonth() - 1);
-            break;
-        }
-        
-        // Get total count for each status
-        const [
-          pendingCount,
-          processingCount,
-          completedCount,
-          failedCount,
-          reversedCount,
-          totalAmount,
-          totalFees,
-        ] = await Promise.all([
-          ctx.db.transaction.count({ 
-            where: { 
-              status: "PENDING",
-              createdAt: { gte: startDate }
-            } 
-          }),
-          ctx.db.transaction.count({ 
-            where: { 
-              status: "PROCESSING",
-              createdAt: { gte: startDate }
-            } 
-          }),
-          ctx.db.transaction.count({ 
-            where: { 
-              status: "COMPLETED",
-              createdAt: { gte: startDate }
-            } 
-          }),
-          ctx.db.transaction.count({ 
-            where: { 
-              status: "FAILED",
-              createdAt: { gte: startDate }
-            } 
-          }),
-          ctx.db.transaction.count({ 
-            where: { 
-              status: "REVERSED",
-              createdAt: { gte: startDate }
-            } 
-          }),
-          ctx.db.transaction.aggregate({
-            _sum: {
-              amount: true,
-            },
-            where: {
-              status: "COMPLETED",
-              createdAt: { gte: startDate }
-            }
-          }),
-          ctx.db.transaction.aggregate({
-            _sum: {
-              fee: true,
-            },
-            where: {
-              status: "COMPLETED",
-              createdAt: { gte: startDate }
-            }
-          }),
-        ]);
-        
-        // Calculate total transactions
-        const totalTransactions = pendingCount + processingCount + completedCount + failedCount + reversedCount;
-        
-        return {
-          period: input.period,
-          totalTransactions,
-          statuses: {
-            pending: pendingCount,
-            processing: processingCount,
-            completed: completedCount,
-            failed: failedCount,
-            reversed: reversedCount,
-          },
-          totalAmount: totalAmount._sum.amount || 0,
-          totalFees: totalFees._sum.fee || 0,
-          successRate: totalTransactions > 0 ? (completedCount / totalTransactions) * 100 : 0,
-        };
-      } catch (error) {
-        console.error("Failed to fetch transaction stats:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to fetch transaction stats",
-        });
-      }
-    }),
-
-  // Update transaction with txHashes and addresses
-  updateTransactionDetails: publicProcedure
-    .input(
-      z.object({
-        // We need to identify the transaction - can be by id or combination of identifying fields
-        transactionId: z.string().optional(),
-        // Alternative identifiers used by bash script
-        dbUserId: z.string().optional(),
-        userId: z.string().optional(),
-        clientUserId: z.string().optional(),
-        invoiceId: z.string().optional(),
-        // The data to update
-        txHashes: z.array(z.string().min(1)),
-        addressesUsed: z.array(z.string().min(1)),
-      }),
-    )
-    .mutation(async ({ ctx, input }) => {
-      try {
-        // Ensure we have at least one way to identify the transaction
-        if (!input.transactionId && !input.invoiceId && !input.dbUserId && !(input.userId && input.clientUserId)) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: "You must provide either transactionId, invoiceId, dbUserId, or both userId and clientUserId",
-          });
-        }
-
-        // Filter out empty strings from arrays
-        const txHashes = input.txHashes.filter(hash => hash && hash.trim() !== "");
-        const addressesUsed = input.addressesUsed.filter(addr => addr && addr.trim() !== "");
-
-        // Build query to find the transaction
-        const where: any = {};
-        
-        if (input.transactionId) {
-          where.id = input.transactionId;
-        } else {
-          // Build compound query based on available identifiers
-          if (input.dbUserId) {
-            where.userId = input.dbUserId;
-          } else if (input.userId) {
-            where.userId = input.userId;
-          }
-          
-          if (input.clientUserId) {
-            where.clientUserId = input.clientUserId;
-          }
-          
-          if (input.invoiceId) {
-            where.invoiceId = input.invoiceId;
-          }
-        }
-
-        // Find the transaction
-        const transaction = await ctx.db.transaction.findFirst({
-          where,
-          orderBy: {
-            // If multiple transactions match the criteria, get the most recent one
-            createdAt: "desc"
-          }
-        });
-
-        if (!transaction) {
-          throw new TRPCError({
-            code: "NOT_FOUND",
-            message: "Transaction not found",
-          });
-        }
-
-        // Update the transaction with the provided data
-        const updatedTransaction = await ctx.db.transaction.update({
-          where: { id: transaction.id },
-          data: {
-            txHashes: txHashes.length > 0 ? txHashes : undefined,
-            addressesUsed: addressesUsed.length > 0 ? addressesUsed : undefined,
-            // If we're adding transaction details, it's likely moving to COMPLETED state
-            // Only update status if it's currently PENDING or PROCESSING
-            ...(["PENDING", "PROCESSING"].includes(transaction.status) && (txHashes.length > 0 || addressesUsed.length > 0)
-              ? { status: "COMPLETED", completedAt: new Date() } 
-              : {}),
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                email: true,
-                username: true,
-              },
-            },
-          },
-        });
-
-        return updatedTransaction;
-      } catch (error) {
-        if (error instanceof TRPCError) throw error;
-        console.error("Failed to update transaction details:", error);
-        throw new TRPCError({
-          code: "INTERNAL_SERVER_ERROR",
-          message: error instanceof Error ? error.message : "Failed to update transaction details",
-        });
-      }
-    }),
-
   // Update API Key Fee
   updateApiKeyFee: adminProcedure
   .input(
@@ -1377,14 +966,11 @@ export const adminRouter = createTRPCRouter({
   .query(async ({ ctx, input }) => {
     try {
       const where = input.userId ? { userId: input.userId } : {};
-      
       // Count total API keys
       const totalCount = await ctx.db.apiKey.count({ where });
-      
       // Calculate pagination
       const skip = (input.page - 1) * input.limit;
       const totalPages = Math.ceil(totalCount / input.limit);
-      
       // Get API keys with user information
       const apiKeys = await ctx.db.apiKey.findMany({
         where,
@@ -1398,9 +984,10 @@ export const adminRouter = createTRPCRouter({
           isActive: true,
           createdAt: true,
           updatedAt: true,
-          usage: true,
+          transactionFee: true,
+          totalUsage: true,
           monthlyUsage: true,
-          limit: true,
+          usageLimit: true,
           user: {
             select: {
               id: true,
@@ -1408,11 +995,11 @@ export const adminRouter = createTRPCRouter({
               username: true,
               first_name: true,
               last_name: true,
+              image: true,
             },
           },
         },
       });
-      
       return {
         apiKeys,
         pagination: {
@@ -1452,17 +1039,6 @@ export const adminRouter = createTRPCRouter({
               last_name: true,
             },
           },
-          Transaction: {
-            take: 10,
-            orderBy: { createdAt: "desc" },
-            select: {
-              id: true,
-              amount: true,
-              status: true,
-              createdAt: true,
-              fee: true,
-            },
-          },
         },
       });
       
@@ -1475,20 +1051,9 @@ export const adminRouter = createTRPCRouter({
       
       // Get transaction stats
       const stats = {
-        totalTransactions: await ctx.db.transaction.count({
-          where: { apiKeyId: input.id },
-        }),
-        successfulTransactions: await ctx.db.transaction.count({
-          where: { apiKeyId: input.id, status: "COMPLETED" },
-        }),
-        totalProcessed: await ctx.db.transaction.aggregate({
-          where: { apiKeyId: input.id, status: "COMPLETED" },
-          _sum: { amount: true },
-        }),
-        totalFees: await ctx.db.transaction.aggregate({
-          where: { apiKeyId: input.id, status: "COMPLETED" },
-          _sum: { fee: true },
-        }),
+        totalUsage: apiKey.totalUsage,
+        monthlyUsage: apiKey.monthlyUsage,
+        usageLimit: apiKey.usageLimit,
       };
       
       return {
@@ -1593,9 +1158,9 @@ export const adminRouter = createTRPCRouter({
         id: z.string(),
         data: z.object({
           name: z.string().optional(),
-          usage: z.number().int().min(0).optional(),
+          totalUsage: z.number().int().min(0).optional(),
           monthlyUsage: z.number().int().min(0).optional(),
-          limit: z.number().int().min(0).optional(),
+          usageLimit: z.number().int().min(0).optional(),
         }),
       })
     )

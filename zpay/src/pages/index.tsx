@@ -1,6 +1,7 @@
 import { signIn, signOut, useSession } from "next-auth/react";
 import Head from "next/head";
 import Link from "next/link";
+import Image from "next/image";
 // import { api } from "@/utils/api"; // Assuming tRPC setup
 import { motion } from "framer-motion";
 import { LockClosedIcon, LockOpenIcon, BoltIcon, CodeBracketIcon, ShieldCheckIcon, CurrencyDollarIcon, CogIcon, ArrowRightIcon } from '@heroicons/react/24/outline'; // Using Heroicons
@@ -399,11 +400,13 @@ export default function Home() {
               </motion.div>
               <motion.div className="lg:w-1/2 relative mt-10 lg:mt-0" variants={fadeInUp} transition={{ delay: 0.2 }}>
                 {/* Increased margin top for mobile */}
-                <img
+                <Image
                   src="/visual.png" // Ensure this image exists in your public folder
                   alt="ZPay Payment Flow Visualization"
                   className="w-full h-auto rounded-xl shadow-xl" // Enhanced shadow
                   style={{ border: "1px solid var(--color-accent-transparent)" }} // Use a transparent accent border
+                  width={1000}
+                  height={1000}
                 />
                 {/* Optional: Add a subtle glow effect */}
                  <div className="absolute inset-0 rounded-xl opacity-30 blur-xl" style={{ background: "radial-gradient(circle, var(--color-accent) 0%, transparent 70%)" }}></div>

@@ -5,7 +5,6 @@ import { api } from "@/utils/api";
 import {
   UserIcon,
   KeyIcon,
-  BellIcon,
   DocumentTextIcon,
   ChartBarIcon,
   ServerIcon,
@@ -16,6 +15,7 @@ import {
   ArrowUpRightIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
+  WifiIcon as SessionsIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 
@@ -223,22 +223,22 @@ export default function AdminAnalytics() {
           <div className="px-4 py-5 sm:p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0 bg-green-500 rounded-md p-3">
-                <BellIcon className="h-6 w-6 text-white" />
+                <SessionsIcon className="h-6 w-6 text-white" />
               </div>
               <div className="ml-5 w-0 flex-1">
                 <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">Webhooks</dt>
-                  <dd className="text-lg font-medium text-gray-900">{formatNumber(dbStats?.counts?.webhooks ?? 0)}</dd>
+                  <dt className="text-sm font-medium text-gray-500 truncate">Active Sessions</dt>
+                  <dd className="text-lg font-medium text-gray-900">{formatNumber(systemStats?.activeSessions ?? 0)}</dd>
                 </dl>
               </div>
             </div>
             <div className="mt-4">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium text-gray-600">
-                  {((dbStats?.counts?.webhooks ?? 0) / Math.max(dbStats?.counts?.users ?? 1, 1) * 100).toFixed(1)}% of users
+                  {((systemStats?.activeSessions ?? 0) / Math.max(dbStats?.counts?.users ?? 1, 1) * 100).toFixed(1)}% of users
                 </div>
                 <div className="text-sm text-gray-500">
-                  Active: {formatNumber(systemStats?.webhookConfigs ?? 0)}
+                  Total: {formatNumber(dbStats?.counts?.sessions ?? 0)}
                 </div>
               </div>
             </div>
@@ -416,7 +416,9 @@ export default function AdminAnalytics() {
             <div className="text-sm font-medium text-gray-500">Records</div>
             <div className="text-sm font-medium text-gray-500">Storage Estimate</div>
           </div>
-          {dbStats && Object.entries(dbStats.counts ?? {}).map(([table, count], idx) => (
+          {dbStats && Object.entries(dbStats.counts ?? {})
+            .filter(([table]) => table !== 'webhooks')
+            .map(([table, count], idx) => (
             <div key={table} className={`border-t border-gray-200 px-4 py-5 sm:grid sm:grid-cols-3 sm:gap-4 sm:px-6 ${idx % 2 ? 'bg-gray-50' : ''}`}>
               <div className="text-sm font-medium text-gray-500 capitalize">{table}</div>
               <div className="mt-1 text-sm text-gray-900 sm:mt-0">{formatNumber(count as number)}</div>

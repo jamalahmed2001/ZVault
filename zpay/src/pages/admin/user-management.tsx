@@ -19,9 +19,10 @@ import {
 } from "@heroicons/react/24/outline";
 import { Dialog, Transition } from "@headlessui/react";
 import { Fragment } from "react";
-
+import Image from "next/image";
 type User = {
   id: string;
+  name?: string | null;
   email: string | null;
   username: string | null;
   first_name: string | null;
@@ -29,9 +30,14 @@ type User = {
   phone: string | null;
   zcashAddress: string | null;
   isAdmin: boolean;
+  emailVerified?: string | Date | null;
+  image?: string | null;
   createdAt: Date;
+  updatedAt: Date;
+  resetToken?: string | null;
+  resetTokenExpiry?: string | Date | null;
   apiKeys?: ApiKey[];
-  webhookConfig?: WebhookConfig | null;
+  stripeCustomerId?: string | null;
 };
 
 type ApiKey = {
@@ -40,14 +46,11 @@ type ApiKey = {
   name: string | null;
   isActive: boolean;
   createdAt: Date;
+  updatedAt?: Date;
   transactionFee?: number;
-};
-
-type WebhookConfig = {
-  id: string;
-  url: string;
-  secret?: string;
-  isActive: boolean;
+  totalUsage?: number;
+  monthlyUsage?: number;
+  usageLimit?: number;
 };
 
 type UserFormData = {
@@ -59,9 +62,10 @@ type UserFormData = {
   zcashAddress?: string;
   isAdmin: boolean;
   password?: string;
+  stripeCustomerId?: string | null;
 };
 
-type EditTab = "profile" | "zcash" | "apikeys" | "webhooks";
+type EditTab = "profile" | "zcash" | "apikeys";
 
 export default function UserManagement() {
   const router = useRouter();
@@ -78,6 +82,7 @@ export default function UserManagement() {
     username: "",
     phone: "",
     zcashAddress: "",
+    stripeCustomerId: "",
     isAdmin: false,
     password: "",
   });
@@ -90,12 +95,8 @@ export default function UserManagement() {
   const [apiKeyName, setApiKeyName] = useState("Default API Key");
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
   const [apiKeyFee, setApiKeyFee] = useState(2.5);
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [webhookSecret, setWebhookSecret] = useState("");
-  const [webhookCopied, setWebhookCopied] = useState(false);
 
   const [userApiKeys, setUserApiKeys] = useState<ApiKey[]>([]);
-  const [userWebhook, setUserWebhook] = useState<WebhookConfig | null>(null);
 
   // API hooks
   const { data: usersData, isLoading: isLoadingUsers, refetch: refetchUsers } = 
@@ -176,23 +177,21 @@ export default function UserManagement() {
     },
   });
 
-  const saveWebhookMutation = api.auth.saveWebhookConfig.useMutation({
-    onSuccess: () => {
-      utils.admin.getAllUsers.invalidate();
-      closeModal();
-    },
-  });
-
-  const generateWebhookSecretMutation = api.auth.generateWebhookSecret.useMutation({
-    onSuccess: (data: { secret: string }) => {
-      setWebhookSecret(data.secret);
-    },
-  });
-
   // Update users when data changes
   useEffect(() => {
     if (usersData) {
-      setUsers(usersData as User[]);
+      // Map transactionFee and other Decimal fields to number for all apiKeys
+      const mappedUsers = (usersData as any[]).map((user) => ({
+        ...user,
+        apiKeys: user.apiKeys?.map((key: any) => ({
+          ...key,
+          transactionFee: key.transactionFee ? Number(key.transactionFee) : undefined,
+          totalUsage: key.totalUsage !== undefined ? Number(key.totalUsage) : undefined,
+          monthlyUsage: key.monthlyUsage !== undefined ? Number(key.monthlyUsage) : undefined,
+          usageLimit: key.usageLimit !== undefined ? Number(key.usageLimit) : undefined,
+        })) || [],
+      }));
+      setUsers(mappedUsers);
       setIsLoading(false);
     }
   }, [usersData]);
@@ -206,6 +205,7 @@ export default function UserManagement() {
       user.last_name,
       user.phone,
       user.zcashAddress,
+      user.stripeCustomerId,
     ];
     
     return searchableFields.some(
@@ -244,21 +244,6 @@ export default function UserManagement() {
     }
   };
   
-  const generateWebhookSecret = () => {
-    if (selectedUser) {
-      generateWebhookSecretMutation.mutate();
-    }
-  };
-  
-  const saveWebhook = () => {
-    if (selectedUser && webhookUrl) {
-      saveWebhookMutation.mutate({
-        url: webhookUrl,
-        secret: webhookSecret
-      });
-    }
-  };
-
   // Form handlers
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target as HTMLInputElement;
@@ -277,6 +262,7 @@ export default function UserManagement() {
       username: "",
       phone: "",
       zcashAddress: "",
+      stripeCustomerId: "",
       isAdmin: false,
       password: "",
     });
@@ -295,16 +281,14 @@ export default function UserManagement() {
       phone: user.phone || "",
       zcashAddress: user.zcashAddress || "",
       isAdmin: user.isAdmin,
+      stripeCustomerId: user.stripeCustomerId || "",
     });
     
     // Reset API key and webhook states
     setApiKey("");
     setApiKeyName("Default API Key");
     setApiKeyFee(2.5);
-    setWebhookUrl("");
-    setWebhookSecret("");
     setUserApiKeys([]);
-    setUserWebhook(null);
     
     setIsModalOpen(true);
   };
@@ -347,13 +331,19 @@ export default function UserManagement() {
         alert("Password is required when creating a new user");
         return;
       }
-      createUserMutation.mutate(formData as Required<UserFormData>);
+      createUserMutation.mutate({
+        ...formData,
+        stripeCustomerId: formData.stripeCustomerId ?? undefined,
+      } as any);
     } else if (selectedUser) {
       // Remove password from update data
       const { password, ...updateData } = formData;
       updateUserMutation.mutate({
         userId: selectedUser.id,
-        data: updateData,
+        data: {
+          ...updateData,
+          stripeCustomerId: updateData.stripeCustomerId ?? undefined,
+        },
       });
     }
   };
@@ -379,12 +369,6 @@ export default function UserManagement() {
           transactionFee: key.transactionFee ? Number(key.transactionFee) : 2.5
         }));
         setUserApiKeys(formattedApiKeys);
-      }
-      
-      if (userDetails.webhookConfig) {
-        setUserWebhook(userDetails.webhookConfig);
-        setWebhookUrl(userDetails.webhookConfig.url || "");
-        setWebhookSecret(userDetails.webhookConfig.secret || "");
       }
     }
   }, [userDetails]);
@@ -445,72 +429,26 @@ export default function UserManagement() {
           <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Name
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Email
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Username
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  ZCash Address
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  API Key
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Fee (%)
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Webhook
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Status
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Joined
-                </th>
-                <th
-                  scope="col"
-                  className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"
-                >
-                  Actions
-                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Username</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ZCash Address</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Stripe Customer ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">API Key</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fee (%)</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Joined</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Image</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email Verified</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reset Token</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Reset Token Expiry</th>
+                <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
+                  <td colSpan={13} className="px-6 py-4 whitespace-nowrap text-center text-sm text-gray-500">
                     No users found
                   </td>
                 </tr>
@@ -526,6 +464,9 @@ export default function UserManagement() {
                           {user.phone && (
                             <div className="text-sm text-gray-500">{user.phone}</div>
                           )}
+                          {user.name && (
+                            <div className="text-xs text-gray-400">Full: {user.name}</div>
+                          )}
                         </div>
                       </div>
                     </td>
@@ -539,6 +480,15 @@ export default function UserManagement() {
                       {user.zcashAddress ? (
                         <span className="text-sm text-gray-900 truncate block max-w-[150px]">
                           {user.zcashAddress}
+                        </span>
+                      ) : (
+                        <span className="text-sm text-orange-500">Not Set</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.stripeCustomerId ? (
+                        <span className="text-sm text-gray-900 truncate block max-w-[150px]">
+                          {user.stripeCustomerId}
                         </span>
                       ) : (
                         <span className="text-sm text-orange-500">Not Set</span>
@@ -569,21 +519,6 @@ export default function UserManagement() {
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      {user.webhookConfig && user.webhookConfig.url ? (
-                        <div className="group relative">
-                          <span className="text-sm text-gray-900 truncate block max-w-[120px] cursor-pointer"
-                                title={user.webhookConfig.url}>
-                            {user.webhookConfig.url.substring(0, 15)}...
-                          </span>
-                          <div className="hidden group-hover:block absolute z-10 p-2 bg-gray-800 text-white text-xs rounded shadow-lg -mt-1 left-0">
-                            {user.webhookConfig.url}
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-sm text-orange-500">Not Set</span>
-                      )}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
                       <button
                         onClick={() => handleToggleAdmin(user.id)}
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
@@ -609,6 +544,34 @@ export default function UserManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                       {new Date(user.createdAt).toLocaleDateString()}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.image ? (
+                        <Image src={user.image} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
+                      ) : (
+                        <span className="text-xs text-gray-400">No Image</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.emailVerified ? (
+                        <span className="text-xs text-green-600">{new Date(user.emailVerified).toLocaleString()}</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">No</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.resetToken ? (
+                        <span className="text-xs text-gray-600">{user.resetToken.substring(0, 10)}...</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">None</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {user.resetTokenExpiry ? (
+                        <span className="text-xs text-blue-600">{new Date(user.resetTokenExpiry).toLocaleString()}</span>
+                      ) : (
+                        <span className="text-xs text-gray-400">None</span>
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end space-x-2">
                         <button
@@ -630,16 +593,6 @@ export default function UserManagement() {
                           className="text-blue-500 hover:text-blue-700"
                         >
                           <KeyIcon className="h-5 w-5" />
-                        </button>
-                        <button
-                          onClick={() => {
-                            handleEditUser(user);
-                            setActiveTab("webhooks");
-                          }}
-                          title="Manage Webhooks"
-                          className="text-purple-500 hover:text-purple-700"
-                        >
-                          <BellIcon className="h-5 w-5" />
                         </button>
                         <button
                           onClick={() => handleResetPassword(user)}
@@ -741,16 +694,6 @@ export default function UserManagement() {
                       >
                         API Keys
                       </button>
-                      <button
-                        onClick={() => setActiveTab("webhooks")}
-                        className={`pb-3 px-1 ${
-                          activeTab === "webhooks"
-                            ? "border-b-2 border-indigo-500 text-indigo-600"
-                            : "border-b-2 border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-                        }`}
-                      >
-                        Webhooks
-                      </button>
                     </nav>
                   </div>
                 )}
@@ -782,6 +725,19 @@ export default function UserManagement() {
                           id="last_name"
                           required
                           value={formData.last_name}
+                          onChange={handleInputChange}
+                          className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        />
+                      </div>
+                      <div className="col-span-2">
+                        <label htmlFor="stripeCustomerId" className="block text-sm font-medium text-gray-700">
+                          Stripe Customer ID
+                        </label>
+                        <input
+                          type="text"
+                          name="stripeCustomerId"
+                          id="stripeCustomerId"
+                          value={formData.stripeCustomerId || ""}
                           onChange={handleInputChange}
                           className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
                         />
@@ -1139,90 +1095,7 @@ export default function UserManagement() {
                         </div>
                       </div>
                     </div>
-                  ) : (
-                    <div className="mt-4">
-                      <div className="flex items-center space-x-2 mb-4">
-                        <BellIcon className="h-5 w-5 text-indigo-500" />
-                        <h4 className="text-md font-medium text-gray-900">Webhook Configuration</h4>
-                      </div>
-                      
-                      <div className="space-y-4">
-                        <div>
-                          <label htmlFor="webhookUrl" className="block text-sm font-medium text-gray-700">
-                            Webhook URL
-                          </label>
-                          <input
-                            type="url"
-                            id="webhookUrl"
-                            value={webhookUrl}
-                            onChange={(e) => setWebhookUrl(e.target.value)}
-                            className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            placeholder="https://example.com/webhooks/zpay"
-                          />
-                          <p className="mt-1 text-xs text-gray-500">
-                            URL where payment notifications will be sent.
-                          </p>
-                        </div>
-                        
-                        <div>
-                          <div className="flex justify-between items-center mb-1">
-                            <label htmlFor="webhookSecret" className="block text-sm font-medium text-gray-700">
-                              Webhook Secret
-                            </label>
-                            <button
-                              type="button"
-                              onClick={generateWebhookSecret}
-                              className="text-xs text-indigo-600 hover:text-indigo-800"
-                            >
-                              Generate New Secret
-                            </button>
-                          </div>
-                          <div className="relative">
-                            <input
-                              type="text"
-                              id="webhookSecret"
-                              value={webhookSecret}
-                              readOnly
-                              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                            />
-                            <button
-                              type="button"
-                              onClick={() => copyToClipboard(webhookSecret, setWebhookCopied)}
-                              className="absolute inset-y-0 right-0 pr-3 flex items-center"
-                              title={webhookCopied ? "Copied!" : "Copy to clipboard"}
-                            >
-                              {webhookCopied ? (
-                                <CheckIcon className="h-4 w-4 text-green-500" />
-                              ) : (
-                                <ClipboardIcon className="h-4 w-4 text-gray-400 hover:text-gray-600" />
-                              )}
-                            </button>
-                          </div>
-                          <p className="mt-1 text-xs text-gray-500">
-                            This secret is used to verify webhook authenticity.
-                          </p>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-6 flex justify-end space-x-3">
-                        <button
-                          type="button"
-                          onClick={closeModal}
-                          className="inline-flex justify-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          type="button"
-                          onClick={saveWebhook}
-                          disabled={!webhookUrl}
-                          className="inline-flex justify-center px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 disabled:bg-indigo-300 disabled:cursor-not-allowed"
-                        >
-                          Save Webhook
-                        </button>
-                      </div>
-                    </div>
-                  )}
+                  ) : null}
                 </form>
               </div>
             </Transition.Child>

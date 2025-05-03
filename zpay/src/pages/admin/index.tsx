@@ -9,6 +9,7 @@ import {
   DocumentTextIcon,
   ArrowTrendingUpIcon,
   ArrowTrendingDownIcon,
+  WifiIcon as SessionsIcon,
 } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 
@@ -43,7 +44,7 @@ export default function AdminDashboard() {
   const stats = {
     userCount: systemStats?.totalUsers || 0,
     apiKeyCount: systemStats?.activeApiKeys || 0,
-    webhookCount: systemStats?.webhookConfigs || 0,
+    activeSessions: systemStats?.activeSessions || 0,
     newUsers: systemStats?.newUsers || 0
   };
 
@@ -66,12 +67,12 @@ export default function AdminDashboard() {
       href: "/admin/api-keys",
     },
     {
-      name: "Webhooks",
-      value: stats.webhookCount,
-      icon: BellIcon,
+      name: "Active Sessions",
+      value: stats.activeSessions,
+      icon: SessionsIcon,
       change: "0%",
       trend: "neutral",
-      href: "/admin/webhooks",
+      href: "#",
     },
     {
       name: "New Users (30d)",
