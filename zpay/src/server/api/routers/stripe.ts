@@ -32,7 +32,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       // Top up all API keys for this user to 250
       await db.apiKey.updateMany({
         where: { userId },
-        data: { usageLimit: 250 },
+        data: { usageLimit: 250, remaining: 250 },
       });
       // Generate an API key for the user if they don't have one
       const existingKeys = await db.apiKey.count({ where: { userId } });
@@ -46,6 +46,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             name: 'Default API Key',
             userId,
             transactionFee: 2.5,
+            usageLimit: 250,
+            remaining: 250,
           },
         });
       }

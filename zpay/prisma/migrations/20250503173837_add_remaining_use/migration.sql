@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ApiKey" ADD COLUMN     "remaining" INTEGER NOT NULL DEFAULT 250;

@@ -36,9 +36,10 @@ export default async function handler(
       updateData = {
         totalUsage: typeof usage === 'number' && usage > key.totalUsage ? usage : { increment: 1 },
         monthlyUsage: typeof monthlyUsage === 'number' && monthlyUsage > key.monthlyUsage ? monthlyUsage : { increment: 1 },
+         remaining : { decrement: 1 },
       };
     } else {
-      updateData = { totalUsage: { increment: 1 }, monthlyUsage: { increment: 1 } };
+      updateData = { totalUsage: { increment: 1 }, monthlyUsage: { increment: 1 }, remaining: { decrement: 1 } };
     }
     const updated = await db.apiKey.update({
       where: { id: key.id },
