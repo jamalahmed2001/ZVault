@@ -503,4 +503,23 @@ export const authRouter = createTRPCRouter({
       return { success: true };
     }),
 
+  // Check if user has an active Stripe subscription
+  checkStripeSubscriptionActive: protectedProcedure.query(async ({ ctx }) => {
+    const user = await ctx.db.user.findUnique({
+      where: { id: ctx.session.user.id },
+      select: { stripeCustomerId: true },
+    });
+    if (!user?.stripeCustomerId) return { active: false };
+    
+    // Import Stripe and initialize
+    const Stripe = (await import('stripe')).default;
+    const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', { apiVersion: '2022-11-15' });
+    
+    // List subscriptions for the customer
+    const subs = await stripe.subscriptions.list({ customer: user.stripeCustomerId, status: 'all', limit: 10 });
+    // Check if any subscription is active or trialing
+    const active = subs.data.some(sub => ['active', 'trialing', 'past_due', 'unpaid'].includes(sub.status));
+    return { active };
+  }),
+
 }); 
