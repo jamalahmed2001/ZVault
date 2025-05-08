@@ -607,6 +607,124 @@ export default function Home() {
           </div>
         </motion.section>
 
+        {/* Live API Test Section */}
+        <section className="py-16 lg:py-20 bg-[var(--color-background-alt)]">
+          <div className="container mx-auto px-6 max-w-2xl">
+            <div className="mb-8 text-center">
+              <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Live API Test</span>
+              <h2 className={headingClasses.sectionLight}>Test the API Live</h2>
+              <p className="mx-auto max-w-xl text-lg mt-4 text-[var(--color-foreground-dark-alt)]">
+                Experience shielded Zcash payments in minutes. Test our API endpoint and see how easy it is to automate private, auditable transactions on your own infrastructure.
+              </p>
+            </div>
+            {/* Inline React component for live test */}
+            {(() => {
+              const React = require('react');
+              const { useState, useEffect, useRef } = React;
+              function LiveApiTest() {
+                const [apiKey, setApiKey] = useState('zv_test_exyd23kb825qnqk74lgji');
+                const [invoiceId, setInvoiceId] = useState('786');
+                const [amount, setAmount] = useState('1000');
+                const [response, setResponse] = useState(null);
+                const [loading, setLoading] = useState(false);
+                const [error, setError] = useState(null);
+                const [addressInfo, setAddressInfo] = useState(null);
+                const [polling, setPolling] = useState(false);
+                const pollingRef = useRef();
+                const testUserId = '123';
+                const handleSend = async () => {
+                  setLoading(true);
+                  setError(null);
+                  setResponse(null);
+                  setAddressInfo(null);
+                  setPolling(false);
+                  try {
+                    const res = await fetch('http://20.0.160.241:5001/create', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({
+                        api_key: apiKey,
+                        user_id: testUserId,
+                        invoice_id: invoiceId,
+                        amount: amount
+                      })
+                    });
+                    const data = await res.json();
+                    setResponse(data);
+                    setPolling(true);
+                  } catch (err) {
+                    setError((err && typeof err === 'object' && 'message' in err) ? (err).message : String(err));
+                  } finally {
+                    setLoading(false);
+                  }
+                };
+                // Poll /address endpoint
+                useEffect(() => {
+                  if (!polling) return;
+                  let stopped = false;
+                  async function poll() {
+                    try {
+                      const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
+                      const res = await fetch(`http://20.0.160.241:5001/address?${params.toString()}`);
+                      const data = await res.json();
+                      setAddressInfo(data);
+                      if ((data.address && data.address !== 'Not Available Yet') || data.not_found) {
+                        setPolling(false);
+                        return;
+                      }
+                      if (!stopped) pollingRef.current = setTimeout(poll, 2000);
+                    } catch (e) {
+                      setPolling(false);
+                    }
+                  }
+                  poll();
+                  return () => { stopped = true; clearTimeout(pollingRef.current); };
+                }, [polling, apiKey, invoiceId]);
+                return (
+                  <div className="rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]" style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
+                    <div className="mb-4">
+                      <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key</label>
+                      <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Enter your API key" />
+                      <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Invoice ID</label>
+                      <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={invoiceId} onChange={e => setInvoiceId(e.target.value)} />
+                      <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP cents)</label>
+                      <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={amount} onChange={e => setAmount(e.target.value)} />
+                      <div className="mb-2 text-sm" style={{ color: 'var(--color-accent)' }}>User ID: <span className="font-mono">123</span></div>
+                    </div>
+                    <button onClick={handleSend} disabled={loading || !apiKey || !invoiceId || !amount} className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)]" style={{ background: 'var(--color-primary)' }}>
+                      {loading ? 'Sending...' : 'Send Test Request'}
+                    </button>
+                    {error && <div className="mt-4 text-red-400">Error: {error}</div>}
+                    {response && (
+                      <pre className="mt-4 rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(response, null, 2)}</pre>
+                    )}
+                    {polling && <div className="mt-4 text-[var(--color-accent)]">Polling for address...</div>}
+                    {addressInfo && (
+                      <div className="mt-4">
+                        <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Address Endpoint Response:</div>
+                        <pre className="rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(addressInfo, null, 2)}</pre>
+                        <button
+                          className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
+                          style={{ background: 'var(--color-primary)' }}
+                          onClick={async () => {
+                            const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
+                            const res = await fetch(`http://20.0.160.241:5001/address?${params.toString()}`);
+                            const data = await res.json();
+                            setAddressInfo(data);
+                          }}
+                        >
+                          Refresh Address Status
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+              return React.createElement(LiveApiTest);
+            })()}
+          </div>
+        </section>
+
         {/* CTA Section - Updated with Three-Stage Icon Animation */}
         <motion.section
           id="cta"
