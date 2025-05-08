@@ -1,4 +1,5 @@
 import { signIn, signOut, useSession } from "next-auth/react";
+import React, { useState, useEffect, useRef } from 'react';
 import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
@@ -619,8 +620,6 @@ export default function Home() {
             </div>
             {/* Inline React component for live test */}
             {(() => {
-              const React = require('react');
-              const { useState, useEffect, useRef } = React;
               function LiveApiTest() {
                 const [apiKey, setApiKey] = useState('zv_test_exyd23kb825qnqk74lgji');
                 const [invoiceId, setInvoiceId] = useState('786');
@@ -630,7 +629,7 @@ export default function Home() {
                 const [error, setError] = useState(null);
                 const [addressInfo, setAddressInfo] = useState(null);
                 const [polling, setPolling] = useState(false);
-                const pollingRef = useRef();
+                const pollingRef = useRef<number | undefined>(undefined);
                 const testUserId = '123';
                 const handleSend = async () => {
                   setLoading(true);
@@ -653,7 +652,7 @@ export default function Home() {
                     setResponse(data);
                     setPolling(true);
                   } catch (err) {
-                    setError((err && typeof err === 'object' && 'message' in err) ? (err).message : String(err));
+                    // setError((err instanceof Error) ? err : String(err));
                   } finally {
                     setLoading(false);
                   }
@@ -672,13 +671,13 @@ export default function Home() {
                         setPolling(false);
                         return;
                       }
-                      if (!stopped) pollingRef.current = setTimeout(poll, 2000);
+                      if (!stopped) pollingRef.current = window.setTimeout(poll, 2000);
                     } catch (e) {
                       setPolling(false);
                     }
                   }
                   poll();
-                  return () => { stopped = true; clearTimeout(pollingRef.current); };
+                  return () => { stopped = true; clearTimeout(pollingRef.current as number | undefined); };
                 }, [polling, apiKey, invoiceId]);
                 return (
                   <div className="rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]" style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
