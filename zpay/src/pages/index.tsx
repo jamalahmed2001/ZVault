@@ -4,7 +4,7 @@ import Head from "next/head";
 import Link from "next/link";
 import Image from "next/image";
 // import { api } from "@/utils/api"; // Assuming tRPC setup
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { LockClosedIcon, LockOpenIcon, BoltIcon, CodeBracketIcon, ShieldCheckIcon, CurrencyDollarIcon, CogIcon, ArrowRightIcon } from '@heroicons/react/24/outline'; // Using Heroicons
 // Removed unused LockOpenIcon import if not used
 
@@ -610,7 +610,7 @@ export default function Home() {
 
         {/* Live API Test Section */}
         <section className="py-16 lg:py-20 bg-[var(--color-background-alt)]">
-          <div className="container mx-auto px-6 max-w-2xl">
+          <div className="container mx-auto px-6 max-w-8xl">
             <div className="mb-8 text-center">
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Live API Test</span>
               <h2 className={headingClasses.sectionLight}>Test the API Live</h2>
@@ -631,7 +631,12 @@ export default function Home() {
                 const [polling, setPolling] = useState(false);
                 const pollingRef = useRef<number | undefined>(undefined);
                 const testUserId = '123';
+                const [hasSentRequest, setHasSentRequest] = useState(false);
+                const [logContent, setLogContent] = useState<string | null>(null);
+                const [logLoading, setLogLoading] = useState(false);
+                const [logError, setLogError] = useState<string | null>(null);
                 const handleSend = async () => {
+                  setHasSentRequest(true);
                   setLoading(true);
                   setError(null);
                   setResponse(null);
@@ -669,6 +674,23 @@ export default function Home() {
                       setAddressInfo(data);
                       if ((data.address && data.address !== 'Not Available Yet') || data.not_found) {
                         setPolling(false);
+                        // Fetch log after address is available
+                        setLogLoading(true);
+                        setLogError(null);
+                        setLogContent(null);
+                        try {
+                          const logRes = await fetch(`https://www.v3nture.link/shared-log?${params.toString()}`);
+                          if (!logRes.ok) {
+                            const errData = await logRes.json().catch(() => ({}));
+                            throw new Error(errData.message || 'Failed to fetch log');
+                          }
+                          const logText = await logRes.text();
+                          setLogContent(logText);
+                        } catch (e: any) {
+                          setLogError(e.message || 'Failed to fetch log');
+                        } finally {
+                          setLogLoading(false);
+                        }
                         return;
                       }
                       if (!stopped) pollingRef.current = window.setTimeout(poll, 2000);
@@ -680,41 +702,112 @@ export default function Home() {
                   return () => { stopped = true; clearTimeout(pollingRef.current as number | undefined); };
                 }, [polling, apiKey, invoiceId]);
                 return (
-                  <div className="rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]" style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
-                    <div className="mb-4">
-                      <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key</label>
-                      <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Enter your API key" />
-                      <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Invoice ID</label>
-                      <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={invoiceId} onChange={e => setInvoiceId(e.target.value)} />
-                      <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP cents)</label>
-                      <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={amount} onChange={e => setAmount(e.target.value)} />
-                      <div className="mb-2 text-sm" style={{ color: 'var(--color-accent)' }}>User ID: <span className="font-mono">123</span></div>
+                  <div className={"flex flex-col gap-4 rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]"} style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
+                    {/* Row: Form and Results */}
+                    <div className="flex flex-col md:flex-row gap-8 w-full">
+                      {/* Form Section with animation */}
+                      <motion.div
+                        className="w-full mb-6 md:mb-0"
+                        animate={{ width: hasSentRequest ? '50%' : '100%' }}
+                        transition={{ type: 'spring', stiffness: 200, damping: 30 }}
+                        style={{ minWidth: 0 }}
+                      >
+                        <div className="mb-4">
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key</label>
+                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Enter your API key" />
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Invoice ID</label>
+                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={invoiceId} onChange={e => setInvoiceId(e.target.value)} />
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP cents)</label>
+                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={amount} onChange={e => setAmount(e.target.value)} />
+                          <div className="mb-2 text-sm" style={{ color: 'var(--color-accent)' }}>User ID: <span className="font-mono">123</span></div>
+                        </div>
+                        <button onClick={handleSend} disabled={loading || !apiKey || !invoiceId || !amount} className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)]" style={{ background: 'var(--color-primary)' }}>
+                          {loading ? 'Sending...' : 'Send Test Request'}
+                        </button>
+                        {error && <div className="mt-4 text-red-400">Error: {error}</div>}
+                      </motion.div>
+                      {/* Results Section */}
+                      <AnimatePresence>
+                        {hasSentRequest && (
+                          <motion.div
+                            className="md:w-1/2 w-full flex flex-col"
+                            initial={{ opacity: 0, x: 40 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 40 }}
+                            transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+                          >
+                            {response && (
+                              <>
+                                <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Create Endpoint Response:</div>
+                                <motion.pre
+                                  className="mb-4 rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]"
+                                  style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.1 }}
+                                >
+                                  {JSON.stringify(response, null, 2)}
+                                </motion.pre>
+                              </>
+                            )}
+                            {polling && <motion.div className="mb-4 text-[var(--color-accent)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>Polling for address...</motion.div>}
+                            {addressInfo && (
+                              <motion.div className="mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                                <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Address Endpoint Response:</div>
+                                <pre className="rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(addressInfo, null, 2)}</pre>
+                                <button
+                                  className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
+                                  style={{ background: 'var(--color-primary)' }}
+                                  onClick={async () => {
+                                    const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
+                                    const res = await fetch(`https://www.v3nture.link/address?${params.toString()}`);
+                                    const data = await res.json();
+                                    setAddressInfo(data);
+                                  }}
+                                >
+                                  Refresh Address Status
+                                </button>
+                              </motion.div>
+                            )}
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
                     </div>
-                    <button onClick={handleSend} disabled={loading || !apiKey || !invoiceId || !amount} className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)]" style={{ background: 'var(--color-primary)' }}>
-                      {loading ? 'Sending...' : 'Send Test Request'}
-                    </button>
-                    {error && <div className="mt-4 text-red-400">Error: {error}</div>}
-                    {response && (
-                      <pre className="mt-4 rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(response, null, 2)}</pre>
-                    )}
-                    {polling && <div className="mt-4 text-[var(--color-accent)]">Polling for address...</div>}
+                    {/* Log display full width, immediately below results */}
                     {addressInfo && (
-                      <div className="mt-4">
-                        <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Address Endpoint Response:</div>
-                        <pre className="rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(addressInfo, null, 2)}</pre>
+                      <motion.div className="w-full" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+                        <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Shielding Process Log:</div>
+                        {logLoading && <div className="text-[var(--color-accent)]">Loading log...</div>}
+                        {logError && <div className="text-red-400">Error: {logError}</div>}
+                        {logContent && (
+                          <pre className="rounded p-4 text-xs overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace', maxHeight: 300 }}>{logContent}</pre>
+                        )}
                         <button
                           className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
                           style={{ background: 'var(--color-primary)' }}
                           onClick={async () => {
+                            setLogLoading(true);
+                            setLogError(null);
+                            setLogContent(null);
                             const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
-                            const res = await fetch(`https://www.v3nture.link/address?${params.toString()}`);
-                            const data = await res.json();
-                            setAddressInfo(data);
+                            try {
+                              const logRes = await fetch(`https://www.v3nture.link/shared-log?${params.toString()}`);
+                              if (!logRes.ok) {
+                                const errData = await logRes.json().catch(() => ({}));
+                                throw new Error(errData.message || 'Failed to fetch log');
+                              }
+                              const logText = await logRes.text();
+                              setLogContent(logText);
+                            } catch (e: any) {
+                              setLogError(e.message || 'Failed to fetch log');
+                            } finally {
+                              setLogLoading(false);
+                            }
                           }}
                         >
-                          Refresh Address Status
+                          Refresh Log
                         </button>
-                      </div>
+                      </motion.div>
                     )}
                   </div>
                 );

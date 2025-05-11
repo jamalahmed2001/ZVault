@@ -28,6 +28,9 @@ export default function AdminApiKeys() {
       name: key.name || "",
       transactionFee: key.transactionFee !== undefined ? Number(key.transactionFee) : 0,
       usageLimit: key.usageLimit !== undefined ? Number(key.usageLimit) : 0,
+      totalUsage: key.totalUsage !== undefined ? Number(key.totalUsage) : 0,
+      monthlyUsage: key.monthlyUsage !== undefined ? Number(key.monthlyUsage) : 0,
+      isActive: key.isActive ?? true,
     });
   };
   const cancelEdit = () => {
@@ -120,8 +123,32 @@ export default function AdminApiKeys() {
                   </td>
                   <td className="px-4 py-3 text-xs">{key.createdAt ? new Date(key.createdAt).toLocaleString() : 'N/A'}</td>
                   <td className="px-4 py-3 text-xs">{key.updatedAt ? new Date(key.updatedAt).toLocaleString() : 'N/A'}</td>
-                  <td className="px-4 py-3 text-center">{key.totalUsage !== undefined ? key.totalUsage : 'N/A'}</td>
-                  <td className="px-4 py-3 text-center">{key.monthlyUsage !== undefined ? key.monthlyUsage : 'N/A'}</td>
+                  <td className="px-4 py-3 text-center">
+                    {editingId === key.id ? (
+                      <input
+                        type="number"
+                        className="w-20 px-1 py-0.5 border rounded text-xs"
+                        value={editFields.totalUsage}
+                        min={0}
+                        onChange={e => handleField('totalUsage', Number(e.target.value))}
+                      />
+                    ) : (
+                      key.totalUsage !== undefined ? key.totalUsage : 'N/A'
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {editingId === key.id ? (
+                      <input
+                        type="number"
+                        className="w-20 px-1 py-0.5 border rounded text-xs"
+                        value={editFields.monthlyUsage}
+                        min={0}
+                        onChange={e => handleField('monthlyUsage', Number(e.target.value))}
+                      />
+                    ) : (
+                      key.monthlyUsage !== undefined ? key.monthlyUsage : 'N/A'
+                    )}
+                  </td>
                   <td className="px-4 py-3 text-center">
                     {editingId === key.id ? (
                       <input
@@ -136,10 +163,21 @@ export default function AdminApiKeys() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
-                    {key.isActive ? (
-                      <span className="inline-flex items-center text-green-600"><CheckIcon className="h-4 w-4 mr-1" />Active</span>
+                    {editingId === key.id ? (
+                      <select
+                        className="w-20 px-1 py-0.5 border rounded text-xs"
+                        value={editFields.isActive ? 'active' : 'disabled'}
+                        onChange={e => handleField('isActive', e.target.value === 'active')}
+                      >
+                        <option value="active">Active</option>
+                        <option value="disabled">Disabled</option>
+                      </select>
                     ) : (
-                      <span className="inline-flex items-center text-red-600"><XMarkIcon className="h-4 w-4 mr-1" />Disabled</span>
+                      key.isActive ? (
+                        <span className="inline-flex items-center text-green-600"><CheckIcon className="h-4 w-4 mr-1" />Active</span>
+                      ) : (
+                        <span className="inline-flex items-center text-red-600"><XMarkIcon className="h-4 w-4 mr-1" />Disabled</span>
+                      )
                     )}
                   </td>
                   <td className="px-4 py-3 text-right">

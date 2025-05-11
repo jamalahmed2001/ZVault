@@ -38,7 +38,7 @@ export default async function handler(
   try {
     const key = await validateApiKey(apiKey);
     // Prevent license issuance if usage is more than 0
-    if (key.monthlyUsage > 250 || monthlyUsage > 250 || key.remaining < 1) {
+    if (key.monthlyUsage > key.usageLimit || monthlyUsage > key.usageLimit || key.remaining < 1) {
       return res.status(403).json({ error: 'Usage limit exceeded for this API key' });
     }
     const now = Math.floor(Date.now() / 1000);
