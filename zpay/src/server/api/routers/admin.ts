@@ -1158,9 +1158,11 @@ export const adminRouter = createTRPCRouter({
         id: z.string(),
         data: z.object({
           name: z.string().optional(),
+          transactionFee: z.number().min(0).max(100).optional(),
           totalUsage: z.number().int().min(0).optional(),
           monthlyUsage: z.number().int().min(0).optional(),
           usageLimit: z.number().int().min(0).optional(),
+          isActive: z.boolean().optional(),
         }),
       })
     )
