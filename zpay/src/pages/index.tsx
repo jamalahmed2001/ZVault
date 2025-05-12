@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 // import { api } from "@/utils/api"; // Assuming tRPC setup
 import { motion, AnimatePresence } from "framer-motion";
-import { LockClosedIcon, LockOpenIcon, BoltIcon, CodeBracketIcon, ShieldCheckIcon, CurrencyDollarIcon, CogIcon, ArrowRightIcon } from '@heroicons/react/24/outline'; // Using Heroicons
+import { LockClosedIcon, LockOpenIcon, BoltIcon, CodeBracketIcon, ShieldCheckIcon, CurrencyDollarIcon, CogIcon, ArrowRightIcon, BuildingOffice2Icon, UsersIcon, KeyIcon } from '@heroicons/react/24/outline'; // Using Heroicons
 // Removed unused LockOpenIcon import if not used
 
 // Animation Variants for Framer Motion
@@ -186,8 +186,8 @@ export default function Home() {
                 style={{ color: "var(--color-primary-foreground)" }}
                 variants={fadeInUp}
               >
-                Accept <span style={{ color: "var(--color-accent)" }}>Shielded Zcash</span> <br />
-                <span className="block mt-2">On Your Infrastructure</span>
+                Take Control: Accept <span style={{ color: "var(--color-accent)" }}>Shielded Zcash</span> <br />
+                <span className="block mt-2">Directly On Your Infrastructure</span>
               </motion.h1>
               <motion.p
                 className="mb-6 text-lg md:text-xl lg:text-2xl mx-auto max-w-3xl"
@@ -197,14 +197,14 @@ export default function Home() {
                 }}
                 variants={fadeInUp}
               >
-                ZVault AutoShield empowers your business to accept shielded Zcash (ZEC) payments—fully auditable for compliance, yet uncompromising on customer privacy. All data and processing remain exclusively on your infrastructure. No third-party risk. No data leakage.
+                ZVault AutoShield empowers your business with unparalleled privacy and control over Zcash (ZEC) payments. Process transactions on your own terms, fully auditable for compliance, while safeguarding customer data. No third-party risk. No data leakage. Pure self-hosted sovereignty.
               </motion.p>
               <motion.p
                 className="mb-10 text-base md:text-lg mx-auto max-w-2xl"
                 style={{ color: "var(--color-accent)" }}
                 variants={fadeInUp}
               >
-                Built for financial and technical leaders: granular audit trails, Vite-powered dashboard, and a robust TypeScript API for one-time-use, isolated payment containers. Instant Zcash payouts—no third-party custody, no settlement delays. £500/month license includes 250 shielded payment automations.
+                Engineered for discerning financial and technical leaders: gain granular audit trails, a sleek Vite-powered dashboard, and a robust TypeScript API for one-time-use, isolated payment containers. Experience instant Zcash payouts directly to your shielded address—no intermediaries, no settlement delays. Your £500/month license includes 250 secure, shielded payment automations.
               </motion.p>
               <motion.div
                 className="flex flex-col items-center justify-center gap-5 sm:flex-row"
@@ -277,9 +277,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Key Benefits</span>
-              <h2 className={headingClasses.sectionLight}>Why Self-Host ZVault?</h2>
+              <h2 className={headingClasses.sectionLight}>Unlock True Financial Autonomy with ZVault</h2>
               <p className="mx-auto max-w-3xl text-lg text-[var(--color-foreground-dark-alt)] mt-4">
-                Accept shielded Zcash payments with full auditability and compliance—while keeping your customers' privacy first. All data and automation stays on your infrastructure, never a third party.
+                Embrace the future of private digital currency. ZVault AutoShield gives you the power to accept shielded Zcash payments with absolute data sovereignty, robust auditability, and uncompromising customer privacy.
               </p>
             </motion.div>
 
@@ -302,7 +302,7 @@ export default function Home() {
                 </div>
                 <h3 className={headingClasses.cardLight}>Private by Design</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  Accept shielded Zcash payments with complete privacy for your customers. All transactions are fully auditable for your business, but no data ever leaves your infrastructure.
+                  Guarantee customer confidentiality. All shielded Zcash transactions are processed and stored exclusively on your infrastructure, invisible to any third party, ensuring full GDPR and CCPA alignment.
                 </p>
               </motion.div>
 
@@ -321,7 +321,7 @@ export default function Home() {
                 </div>
                 <h3 className={headingClasses.cardLight}>Instant, Isolated Containers</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  Each Zcash payment is processed in a one-time-use, isolated container—ensuring privacy and auditability, with no cross-contamination or third-party risk.
+                  Achieve unparalleled security and auditability. Each Zcash payment is handled in a dedicated, single-use container, eliminating cross-contamination risk and providing a clear, auditable trail.
                 </p>
               </motion.div>
 
@@ -340,7 +340,7 @@ export default function Home() {
                 </div>
                 <h3 className={headingClasses.cardLight}>Vite Dashboard & API</h3>
                 <p className="text-[var(--color-foreground-dark-alt)] leading-relaxed min-h-[6rem]">
-                  View transaction history, audit payments, and configure your API—all on your own infrastructure. No third-party dashboards or data leaks.
+                  Manage your operations with a modern, intuitive Vite-powered dashboard and integrate seamlessly with our TypeScript API—all hosted on your infrastructure. Maintain complete control, avoid data leaks.
                 </p>
               </motion.div>
             </motion.div>
@@ -359,22 +359,22 @@ export default function Home() {
               <motion.div className="lg:w-1/2" variants={fadeInUp}>
                 <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Security First</span>
                 {/* Removed redundant icon, using list icons below */}
-                <h2 className={headingClasses.section}>Security Through Self-Hosting</h2>
+                <h2 className={headingClasses.section}>Own Your Security: Self-Hosted Zcash Payments</h2>
                 <p className="text-lg mb-8 leading-relaxed" style={{ color: "var(--color-foreground-alt)" }}>
-                  ZVault AutoShield ensures all Zcash payment data and automation stays on your infrastructure. Shielded transactions are auditable for your business, but never expose your customers to third parties.
+                  With ZVault AutoShield, you're not just processing payments; you're fortifying your financial operations. By keeping all Zcash payment data and automation on your infrastructure, you eliminate third-party vulnerabilities and ensure that shielded transactions are auditable only by you, maintaining customer trust.
                 </p>
                 <ul className="space-y-4" style={{ color: "var(--color-foreground-alt)" }}>
                   <li className="flex items-start">
                     <ShieldCheckIcon className="h-6 w-6 mr-4 mt-1 flex-shrink-0 text-[var(--color-accent)]" />
-                    <span>All Zcash payment data and automation is processed on your infrastructure—never a third party.</span>
+                    <span><strong>Total Data Sovereignty:</strong> All Zcash payment data and automation logic reside exclusively on your infrastructure. No external dependencies, no data leaks.</span>
                   </li>
                   <li className="flex items-start">
                     <ShieldCheckIcon className="h-6 w-6 mr-4 mt-1 flex-shrink-0 text-[var(--color-accent)]" />
-                    <span>One-time-use containers ensure each payment is isolated, private, and auditable.</span>
+                    <span><strong>Isolated & Auditable Transactions:</strong> One-time-use containers ensure each payment is cryptographically isolated, providing unparalleled privacy and a clear, immutable audit trail for your records.</span>
                   </li>
                   <li className="flex items-start">
                     <ShieldCheckIcon className="h-6 w-6 mr-4 mt-1 flex-shrink-0 text-[var(--color-accent)]" />
-                    <span>Meets privacy and compliance requirements by default, with no external dependencies or data sharing.</span>
+                    <span><strong>Compliance by Default:</strong> Designed to meet stringent privacy and financial compliance requirements out-of-the-box, without complex configurations or external data sharing.</span>
                   </li>
                 </ul>
                 <div className="mt-10"> {/* Increased margin top */}
@@ -428,9 +428,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Simple Process</span>
-              <h2 className={headingClasses.sectionLight}>Get Started with ZVault AutoShield</h2>
+              <h2 className={headingClasses.sectionLight}>Streamlined Self-Hosted Zcash Integration</h2>
               <p className="mx-auto max-w-2xl text-lg mt-4 text-[var(--color-foreground-dark-alt)]">
-                Deploy in minutes. Accept shielded Zcash payments with full auditability and privacy for your customers. All data stays on your infrastructure.
+                Go live in minutes. ZVault AutoShield offers a straightforward path to accepting shielded Zcash payments, ensuring complete data control, robust auditability, and enhanced privacy for your customers—all on your infrastructure.
               </p>
             </motion.div>
 
@@ -455,9 +455,9 @@ export default function Home() {
                       borderColor: "var(--color-primary)"
                     }}>1</div>
                   <CogIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" />
-                  <h3 className={headingClasses.cardLight}>Deploy & Configure</h3>
+                  <h3 className={headingClasses.cardLight}>1. Deploy & Configure</h3>
                   <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Purchase your license and deploy ZVault AutoShield on your own infrastructure. Use the dashboard to configure your Zcash shielded address and API settings—all private, all yours.
+                    Secure your license and deploy ZVault AutoShield onto your preferred infrastructure. Utilize the intuitive dashboard to configure your shielded Zcash address and API settings. It's all yours, fully private.
                   </p>
                 </div>
               </motion.div>
@@ -476,10 +476,10 @@ export default function Home() {
                        color: "var(--color-accent-foreground)",
                        borderColor: "var(--color-accent)"
                      }}>2</div>
-                   <CodeBracketIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-accent)]" />
-                   <h3 className={headingClasses.cardLight}>Get Your API Key</h3>
+                   <KeyIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-accent)]" />
+                   <h3 className={headingClasses.cardLight}>2. Generate Your API Key</h3>
                    <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Generate your API key from the dashboard. This key authorizes your Zcash payment automations and tracks your container usage (250/month included). All data stays private.
+                    Instantly generate a unique API key from your self-hosted dashboard. This key authenticates your Zcash payment automations and monitors your container usage (250 shielded transactions per month included). Your data remains entirely private.
                    </p>
                  </div>
               </motion.div>
@@ -499,9 +499,9 @@ export default function Home() {
                       borderColor: "var(--color-primary)"
                     }}>3</div>
                   <BoltIcon className="h-12 w-12 mb-6 mx-auto md:mx-0 text-[var(--color-primary)]" />
-                  <h3 className={headingClasses.cardLight}>Create Containers & Automate</h3>
+                  <h3 className={headingClasses.cardLight}>3. Automate & Transact</h3>
                   <p className="leading-relaxed text-[var(--color-foreground-dark-alt)]">
-                    Use the TypeScript API to create one-time transactional containers for each Zcash payment. All processing and audit logs remain on your infrastructure.
+                    Leverage the powerful TypeScript API to create on-demand, one-time transactional containers for each shielded Zcash payment. All processing, logs, and sensitive data are confined to your infrastructure, ensuring maximum security and auditability.
                   </p>
                 </div>
               </motion.div>
@@ -521,9 +521,9 @@ export default function Home() {
           <div className="container mx-auto px-6">
             <motion.div className="mb-14 text-center" variants={fadeInUp}>
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Perfect For</span>
-              <h2 className={headingClasses.section}>Who Should Self-Host ZVault?</h2>
+              <h2 className={headingClasses.section}>Who Benefits Most from ZVault AutoShield?</h2>
               <p className="mx-auto max-w-3xl text-lg mt-4" style={{ color: "var(--color-foreground-alt)" }}>
-                ZVault AutoShield is ideal for businesses and organizations that need to accept shielded Zcash payments with full auditability, while keeping customer privacy first and all data on their own infrastructure.
+                ZVault AutoShield is engineered for organizations that prioritize financial privacy, data security, and operational independence. If you need to accept shielded Zcash payments with robust auditability while retaining full control over your data, ZVault is your solution.
               </p>
             </motion.div>
 
@@ -539,14 +539,11 @@ export default function Home() {
                     backgroundColor: "rgba(10, 25, 48, 0.5)", // Darker background
                     color: "var(--color-accent)"
                   }}>
-                  {/* Replaced SVG with Heroicon */}
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                     <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 21v-7.5A.75.75 0 0 1 14.25 12h7.5a.75.75 0 0 1 .75.75-7.5 7.5 0 0 1-7.5 7.5h-7.5a.75.75 0 0 1-.75-.75V7.5a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 .75.75v7.5Z" />
-                  </svg>
+                  <BuildingOffice2Icon className="w-8 h-8" />
                  </div>
                  <h3 className={headingClasses.card}>Enterprises & Fintechs</h3>
                  <p className="leading-relaxed min-h-[6rem]" style={{ color: "var(--color-foreground-alt)" }}>
-                  Accept shielded Zcash payments with full auditability and compliance. All payment data and automation stays on your infrastructure for maximum privacy and control.
+                  Integrate compliant, private Zcash payments directly into your financial workflows. Maintain complete data sovereignty and enhance customer trust by ensuring all operations occur on your secure infrastructure.
                  </p>
               </motion.div>
 
@@ -561,14 +558,11 @@ export default function Home() {
                      backgroundColor: "rgba(212,175,55,0.15)", // Accent background
                      color: "var(--color-accent)"
                    }}>
-                   {/* Replaced SVG with Heroicon */}
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-8 h-8">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                    </svg>
+                    <UsersIcon className="w-8 h-8" />
                  </div>
                  <h3 className={headingClasses.card}>Agencies & SaaS Providers</h3>
                  <p className="leading-relaxed min-h-[6rem]" style={{ color: "var(--color-foreground-alt)" }}>
-                   Offer private, transactional automation for your clients. Keep all data and logic between you and your clients on your own infrastructure. Accept shielded Zcash payments with auditability and privacy.
+                   Offer secure, transactional Zcash automation as a white-label service. All data and logic remain confined between you and your clients on your infrastructure, enhancing value and privacy.
                  </p>
                </motion.div>
 
@@ -583,7 +577,6 @@ export default function Home() {
                      backgroundColor: "rgba(10, 25, 48, 0.5)", // Darker background
                      color: "var(--color-accent)"
                   }}>
-                   {/* Replaced SVG with Heroicon */}
                    <LockClosedIcon className="w-8 h-8" />
                  </div>
                  <h3 className={headingClasses.card}>Privacy-First Teams</h3>
@@ -613,28 +606,78 @@ export default function Home() {
           <div className="container mx-auto px-6 max-w-8xl">
             <div className="mb-8 text-center">
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Live API Test</span>
-              <h2 className={headingClasses.sectionLight}>Test the API Live</h2>
+              <h2 className={headingClasses.sectionLight}>Experience Real-Time Shielded Transactions</h2>
               <p className="mx-auto max-w-xl text-lg mt-4 text-[var(--color-foreground-dark-alt)]">
-                Experience shielded Zcash payments in minutes. Test our API endpoint and see how easy it is to automate private, auditable transactions on your own infrastructure.
+                Witness the power of ZVault AutoShield firsthand. Use the interactive form below to simulate a shielded Zcash payment request via our API. See how effortlessly you can generate secure, private, and auditable transactions—all processed on your own (simulated) infrastructure.
               </p>
             </div>
             {/* Inline React component for live test */}
             {(() => {
               function LiveApiTest() {
-                const [apiKey, setApiKey] = useState('zv_test_exyd23kb825qnqk74lgji');
-                const [invoiceId, setInvoiceId] = useState('786');
+                // Helper to generate a random string
+                function randomString(len = 8) {
+                  return Math.random().toString(36).substring(2, 2 + len);
+                }
+                
+                // Initialize state with default values
+                const [apiKey, setApiKey] = useState('zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
+                const [userId, setUserId] = useState(() => randomString(10));
+                const [invoiceId, setInvoiceId] = useState(() => randomString(8));
                 const [amount, setAmount] = useState('1000');
-                const [response, setResponse] = useState(null);
-                const [loading, setLoading] = useState(false);
-                const [error, setError] = useState(null);
-                const [addressInfo, setAddressInfo] = useState(null);
-                const [polling, setPolling] = useState(false);
-                const pollingRef = useRef<number | undefined>(undefined);
-                const testUserId = '123';
+                const [response, setResponse] = useState<object | null>(null);
+                const [addressInfo, setAddressInfo] = useState<object | null>(null);
                 const [hasSentRequest, setHasSentRequest] = useState(false);
                 const [logContent, setLogContent] = useState<string | null>(null);
-                const [logLoading, setLogLoading] = useState(false);
                 const [logError, setLogError] = useState<string | null>(null);
+                
+                const [loading, setLoading] = useState(false);
+                const [error, setError] = useState<string | null>(null);
+                const [polling, setPolling] = useState(false);
+                const pollingRef = useRef<number | undefined>(undefined);
+                const [logLoading, setLogLoading] = useState(false);
+
+                // Effect to load state from localStorage on mount (client-side only)
+                useEffect(() => {
+                  if (typeof window !== 'undefined') {
+                    const savedState = localStorage.getItem('zvault_live_api_test');
+                    if (savedState) {
+                      try {
+                        const parsedState = JSON.parse(savedState);
+                        setApiKey(parsedState.apiKey || 'zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
+                        setUserId(parsedState.userId || randomString(10));
+                        setInvoiceId(parsedState.invoiceId || randomString(8));
+                        setAmount(parsedState.amount || '1000');
+                        setResponse(parsedState.response || null);
+                        setAddressInfo(parsedState.addressInfo || null);
+                        setHasSentRequest(parsedState.hasSentRequest || false);
+                        setLogContent(parsedState.logContent || null);
+                        setLogError(parsedState.logError || null);
+                      } catch (e) {
+                        console.error("Failed to parse saved state from localStorage", e);
+                        // Optionally clear corrupted localStorage item
+                        // localStorage.removeItem('zvault_live_api_test');
+                      }
+                    }
+                  }
+                }, []); // Empty dependency array ensures this runs only once on mount
+
+                // Persist state to localStorage on change (client-side only)
+                useEffect(() => {
+                  if (typeof window !== 'undefined') {
+                    localStorage.setItem('zvault_live_api_test', JSON.stringify({
+                      apiKey,
+                      userId,
+                      invoiceId,
+                      amount,
+                      response,
+                      addressInfo,
+                      hasSentRequest,
+                      logContent,
+                      logError
+                    }));
+                  }
+                }, [apiKey, userId, invoiceId, amount, response, addressInfo, hasSentRequest, logContent, logError]);
+
                 const handleSend = async () => {
                   setHasSentRequest(true);
                   setLoading(true);
@@ -648,7 +691,7 @@ export default function Home() {
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
                         api_key: apiKey,
-                        user_id: testUserId,
+                        user_id: userId,
                         invoice_id: invoiceId,
                         amount: amount
                       })
@@ -658,6 +701,7 @@ export default function Home() {
                     setPolling(true);
                   } catch (err) {
                     // setError((err instanceof Error) ? err : String(err));
+                    setError((err instanceof Error) ? err.message : String(err));
                   } finally {
                     setLoading(false);
                   }
@@ -668,7 +712,7 @@ export default function Home() {
                   let stopped = false;
                   async function poll() {
                     try {
-                      const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
+                      const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
                       const res = await fetch(`https://www.v3nture.link/address?${params.toString()}`);
                       const data = await res.json();
                       setAddressInfo(data);
@@ -696,11 +740,12 @@ export default function Home() {
                       if (!stopped) pollingRef.current = window.setTimeout(poll, 2000);
                     } catch (e) {
                       setPolling(false);
+                      setError((e instanceof Error) ? e.message : String(e)); // Also update error handling here
                     }
                   }
                   poll();
                   return () => { stopped = true; clearTimeout(pollingRef.current as number | undefined); };
-                }, [polling, apiKey, invoiceId]);
+                }, [polling, apiKey, userId, invoiceId]);
                 return (
                   <div className={"flex flex-col gap-4 rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]"} style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
                     {/* Row: Form and Results */}
@@ -713,16 +758,36 @@ export default function Home() {
                         style={{ minWidth: 0 }}
                       >
                         <div className="mb-4">
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key</label>
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key (Test Key Provided)</label>
                           <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Enter your API key" />
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Invoice ID</label>
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique Invoice ID (Auto-Generated)</label>
                           <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={invoiceId} onChange={e => setInvoiceId(e.target.value)} />
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP cents)</label>
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP pence, e.g., 1000 for £10.00)</label>
                           <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={amount} onChange={e => setAmount(e.target.value)} />
-                          <div className="mb-2 text-sm" style={{ color: 'var(--color-accent)' }}>User ID: <span className="font-mono">123</span></div>
+                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique User ID (Auto-Generated)</label>
+                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={userId} onChange={e => setUserId(e.target.value)} />
                         </div>
-                        <button onClick={handleSend} disabled={loading || !apiKey || !invoiceId || !amount} className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)]" style={{ background: 'var(--color-primary)' }}>
-                          {loading ? 'Sending...' : 'Send Test Request'}
+                        <button onClick={handleSend} disabled={loading || !apiKey || !invoiceId || !amount} className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'var(--color-primary)' }}>
+                          {loading ? 'Sending...' : 'Initiate Test Transaction'}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setApiKey('zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
+                            setUserId(randomString(10));
+                            setInvoiceId(randomString(8));
+                            setAmount('1000');
+                            setResponse(null);
+                            setAddressInfo(null);
+                            setHasSentRequest(false);
+                            setLogContent(null);
+                            setLogError(null);
+                          }}
+                          className="ml-3 rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+                          style={{ background: 'var(--color-primary)' }}
+                          disabled={loading}
+                        >
+                          Reset Form
                         </button>
                         {error && <div className="mt-4 text-red-400">Error: {error}</div>}
                       </motion.div>
@@ -759,7 +824,7 @@ export default function Home() {
                                   className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
                                   style={{ background: 'var(--color-primary)' }}
                                   onClick={async () => {
-                                    const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
+                                    const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
                                     const res = await fetch(`https://www.v3nture.link/address?${params.toString()}`);
                                     const data = await res.json();
                                     setAddressInfo(data);
@@ -789,7 +854,7 @@ export default function Home() {
                             setLogLoading(true);
                             setLogError(null);
                             setLogContent(null);
-                            const params = new URLSearchParams({ api_key: apiKey, user_id: testUserId, invoice_id: invoiceId });
+                            const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
                             try {
                               const logRes = await fetch(`https://www.v3nture.link/shared-log?${params.toString()}`);
                               if (!logRes.ok) {
@@ -916,12 +981,12 @@ export default function Home() {
               <h2
                 className="mb-8 text-3xl font-bold md:text-4xl lg:text-5xl text-[var(--color-foreground-dark)]"
               >
-                Ready to <span style={{ color: "var(--color-accent)" }}>Unlock</span> Private, Auditable Zcash Payments?
+                Ready to <span style={{ color: "var(--color-accent)" }}>Command</span> Your Financial Privacy?
               </h2>
               <p
                 className="mb-12 text-lg md:text-xl mx-auto max-w-2xl text-[var(--color-foreground-dark-alt)]"
               >
-                Join ZVault AutoShield and accept shielded Zcash payments with full auditability and privacy. All data and automation stays on your infrastructure—no third parties, ever.
+                Step into the future of secure, self-hosted Zcash payments. With ZVault AutoShield, you gain unparalleled control over your transactions, ensuring complete auditability and ironclad customer privacy. All data, all automation, all on your infrastructure—no compromises, no third parties, ever.
               </p>
               <motion.button
                 onClick={sessionData ? () => void signOut() : () => void signIn()}

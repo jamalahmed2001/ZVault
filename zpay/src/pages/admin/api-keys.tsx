@@ -2,7 +2,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "@/components/AdminLayout";
 import { api } from "@/utils/api";
-import { KeyIcon, CheckIcon, XMarkIcon, PencilIcon } from "@heroicons/react/24/outline";
+import { KeyIcon, CheckIcon, XMarkIcon, PencilIcon, TrashIcon } from "@heroicons/react/24/outline";
 import { useRouter } from "next/router";
 import Image from "next/image";
 export default function AdminApiKeys() {
@@ -19,6 +19,9 @@ export default function AdminApiKeys() {
       refetch();
     },
   });
+  const deleteApiKey = api.admin.deleteApiKey.useMutation({
+    onSuccess: () => refetch(),
+  });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editFields, setEditFields] = useState<any>({});
 
@@ -31,6 +34,8 @@ export default function AdminApiKeys() {
       totalUsage: key.totalUsage !== undefined ? Number(key.totalUsage) : 0,
       monthlyUsage: key.monthlyUsage !== undefined ? Number(key.monthlyUsage) : 0,
       isActive: key.isActive ?? true,
+      userId: key.userId || "",
+      remaining: key.remaining !== undefined ? Number(key.remaining) : 0,
     });
   };
   const cancelEdit = () => {
@@ -61,12 +66,14 @@ export default function AdminApiKeys() {
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User Image</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">User ID</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Transaction Fee (%)</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Created</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Updated</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Total Usage</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Monthly Usage</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Limit</th>
+              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Remaining</th>
               <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
               <th className="px-4 py-3"></th>
             </tr>
@@ -104,6 +111,18 @@ export default function AdminApiKeys() {
                       <Image src={key.user.image} alt="avatar" className="h-8 w-8 rounded-full object-cover" />
                     ) : (
                       <span className="text-xs text-gray-400">No Image</span>
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs truncate max-w-xs">
+                    {editingId === key.id ? (
+                      <input
+                        type="text"
+                        className="w-32 px-1 py-0.5 border rounded text-xs font-mono"
+                        value={editFields.userId}
+                        onChange={e => handleField('userId', e.target.value)}
+                      />
+                    ) : (
+                      key.userId || 'N/A'
                     )}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -164,6 +183,19 @@ export default function AdminApiKeys() {
                   </td>
                   <td className="px-4 py-3 text-center">
                     {editingId === key.id ? (
+                      <input
+                        type="number"
+                        className="w-20 px-1 py-0.5 border rounded text-xs"
+                        value={editFields.remaining}
+                        min={0}
+                        onChange={e => handleField('remaining', Number(e.target.value))}
+                      />
+                    ) : (
+                      key.remaining !== undefined ? key.remaining : 'N/A'
+                    )}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    {editingId === key.id ? (
                       <select
                         className="w-20 px-1 py-0.5 border rounded text-xs"
                         value={editFields.isActive ? 'active' : 'disabled'}
@@ -212,6 +244,15 @@ export default function AdminApiKeys() {
                       disabled={editingId === key.id}
                     >
                       {key.isActive ? 'Disable' : 'Enable'}
+                    </button>
+                    <button
+                      type="button"
+                      className="ml-2 text-red-600 hover:text-red-800"
+                      title="Delete API Key"
+                      onClick={() => deleteApiKey.mutate({ id: key.id })}
+                      disabled={editingId === key.id || deleteApiKey.status === 'pending'}
+                    >
+                      <TrashIcon className="h-4 w-4" />
                     </button>
                   </td>
                 </tr>
