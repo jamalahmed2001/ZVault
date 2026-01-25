@@ -686,7 +686,7 @@ export default function Home() {
                   setAddressInfo(null);
                   setPolling(false);
                   try {
-                    const res = await fetch('https://www.v3nture.link/create', {
+                    const res = await fetch('http://212.159.12.235:5001/create', {
                       method: 'POST',
                       headers: { 'Content-Type': 'application/json' },
                       body: JSON.stringify({
@@ -713,7 +713,7 @@ export default function Home() {
                   async function poll() {
                     try {
                       const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                      const res = await fetch(`https://www.v3nture.link/address?${params.toString()}`);
+                      const res = await fetch(`http://212.159.12.235:5001/address?${params.toString()}`);
                       const data = await res.json();
                       setAddressInfo(data);
                       if ((data.address && data.address !== 'Not Available Yet') || data.not_found) {
@@ -723,7 +723,7 @@ export default function Home() {
                         setLogError(null);
                         setLogContent(null);
                         try {
-                          const logRes = await fetch(`https://www.v3nture.link/shared-log?${params.toString()}`);
+                          const logRes = await fetch(`http://212.159.12.235:5001/shared-log?${params.toString()}`);
                           if (!logRes.ok) {
                             const errData = await logRes.json().catch(() => ({}));
                             throw new Error(errData.message || 'Failed to fetch log');
@@ -825,7 +825,7 @@ export default function Home() {
                                   style={{ background: 'var(--color-primary)' }}
                                   onClick={async () => {
                                     const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                                    const res = await fetch(`https://www.v3nture.link/address?${params.toString()}`);
+                                    const res = await fetch(`http://212.159.12.235:5001/address?${params.toString()}`);
                                     const data = await res.json();
                                     setAddressInfo(data);
                                   }}
@@ -856,7 +856,7 @@ export default function Home() {
                             setLogContent(null);
                             const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
                             try {
-                              const logRes = await fetch(`https://www.v3nture.link/shared-log?${params.toString()}`);
+                              const logRes = await fetch(`http://212.159.12.235:5001/shared-log?${params.toString()}`);
                               if (!logRes.ok) {
                                 const errData = await logRes.json().catch(() => ({}));
                                 throw new Error(errData.message || 'Failed to fetch log');
