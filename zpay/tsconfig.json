@@ -41,7 +41,9 @@
   "exclude": [
     "node_modules",
     "**/dist/**",
+    "**/dist-obf/**",
     "**/build/**",
-    "**/.next/**"
+    "**/.next/**",
+    "src/server/PRODUCT/**"
   ]
 }

@@ -23,6 +23,22 @@ const config = {
     ignoreDuringBuilds: true,
   },
   
+  typescript: {
+    ignoreBuildErrors: false,
+  },
+  
+  webpack: (config, { isServer }) => {
+    config.watchOptions = {
+      ...config.watchOptions,
+      ignored: [
+        ...(Array.isArray(config.watchOptions?.ignored) ? config.watchOptions.ignored : []),
+        '**/src/server/PRODUCT/**',
+        '**/dist-obf/**',
+      ],
+    };
+    return config;
+  },
+  
   async headers() {
     return [
       {
