@@ -1,0 +1,62 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.next/
+out/
+*.tsbuildinfo
+target/
+
+# Release/build artifacts
+release/
+*.tar
+
+# Rust build artifacts
+**/target/
+Cargo.lock
+
+# Production
+*.log
+
+# Environment variables
+.env
+.env*.local
+# .env.example should be tracked
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Debug
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+
+# Vercel
+.vercel
+
+# Database
+*.sqlite
+*.sqlite-journal
+*.db
+
+# Coverage
+coverage/
+*.lcov
+
+# Temporary files
+*.tmp
+*.temp
+.cache/

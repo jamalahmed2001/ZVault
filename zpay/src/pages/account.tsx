@@ -51,6 +51,8 @@ export default function Account() {
   
   // API key state
   const [apiKeyCopied, setApiKeyCopied] = useState(false);
+  const [apiKeyName, setApiKeyName] = useState("");
+  const [isGeneratingApiKey, setIsGeneratingApiKey] = useState(false);
   
   // Stripe payment state
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -77,12 +79,33 @@ export default function Account() {
   const { data: subscriptionStatus, isLoading: subscriptionStatusLoading } = api.auth.checkStripeSubscriptionActive.useQuery(undefined, { refetchOnWindowFocus: false });
   const paymentSuccess = paymentSuccessUrl || !!(subscriptionStatus && subscriptionStatus.active);
   const apiKeysQuery = api.auth.getApiKeys.useQuery(undefined, { enabled: paymentSuccess });
+  const generateApiKeyMutation = api.auth.generateApiKey.useMutation({
+    onSuccess: () => {
+      apiKeysQuery.refetch();
+      setApiKeyName("");
+      setIsGeneratingApiKey(false);
+    },
+    onError: (error) => {
+      console.error("Failed to generate API key:", error);
+      setIsGeneratingApiKey(false);
+    },
+  });
 
   const copyApiKey = (apiKey: string) => {
     if (!apiKey) return;
     navigator.clipboard.writeText(apiKey);
     setApiKeyCopied(true);
     setTimeout(() => setApiKeyCopied(false), 2000);
+  };
+
+  const handleGenerateApiKey = () => {
+    if (!paymentSuccess) return;
+    setIsGeneratingApiKey(true);
+    generateApiKeyMutation.mutate({
+      name: apiKeyName || undefined,
+      isLiveKey: false,
+      transactionFee: 2.5,
+    });
   };
 
   const handleStripeSubscription = async () => {
@@ -146,7 +169,9 @@ export default function Account() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           apiKey: apiKeysQuery.data[0].key,
-          targetServerIp: targetServerIp,
+          targetServerIp,
+          transactionFee: apiKeysQuery.data[0].transactionFee,
+          zcashAddress: userProfile.data?.zcashAddress ?? '',
         }),
       });
 
@@ -285,7 +310,82 @@ export default function Account() {
                       <KeyIcon className="h-7 w-7 mr-3 text-accent" /> 
                       API Key
                     </h2>
-                    <p className="text-foreground-alt">No API key found. This is unusual for an active subscription. Please contact support if you believe this is an error.</p>
+                    <p className="text-foreground-alt mb-6">No API key found. Generate a new API key to get started.</p>
+                    <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+                      <input
+                        type="text"
+                        value={apiKeyName}
+                        onChange={(e) => setApiKeyName(e.target.value)}
+                        placeholder="API Key Name (optional)"
+                        className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-surface-alt border border-border text-foreground placeholder-foreground-alt"
+                        disabled={isGeneratingApiKey}
+                      />
+                      <button
+                        onClick={handleGenerateApiKey}
+                        disabled={isGeneratingApiKey || !paymentSuccess}
+                        className="px-6 py-3 rounded-lg font-semibold transition-colors bg-accent text-accent-foreground hover:bg-hover-primary disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {isGeneratingApiKey ? (
+                          <>
+                            <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <KeyIcon className="h-5 w-5" />
+                            Generate API Key
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    {generateApiKeyMutation.isError && (
+                      <p className="mt-4 text-error text-sm">
+                        {generateApiKeyMutation.error?.message || "Failed to generate API key"}
+                      </p>
+                    )}
+                 </motion.section>
+               )}
+               
+               {apiKeysQuery.data && Array.isArray(apiKeysQuery.data) && apiKeysQuery.data.length > 0 && (
+                 <motion.section variants={fadeInUp} className="bg-surface border border-border rounded-xl shadow-lg p-6 md:p-8">
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                      <h2 className="text-xl md:text-2xl font-bold text-foreground flex items-center">
+                        <KeyIcon className="h-7 w-7 mr-3 text-accent" /> 
+                        Generate New API Key
+                      </h2>
+                    </div>
+                    <div className="max-w-md mx-auto flex flex-col sm:flex-row gap-3">
+                      <input
+                        type="text"
+                        value={apiKeyName}
+                        onChange={(e) => setApiKeyName(e.target.value)}
+                        placeholder="API Key Name (optional)"
+                        className="flex-1 px-4 py-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent bg-surface-alt border border-border text-foreground placeholder-foreground-alt"
+                        disabled={isGeneratingApiKey}
+                      />
+                      <button
+                        onClick={handleGenerateApiKey}
+                        disabled={isGeneratingApiKey || !paymentSuccess}
+                        className="px-6 py-3 rounded-lg font-semibold transition-colors bg-accent text-accent-foreground hover:bg-hover-primary disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                      >
+                        {isGeneratingApiKey ? (
+                          <>
+                            <ArrowPathIcon className="h-5 w-5 animate-spin" />
+                            Generating...
+                          </>
+                        ) : (
+                          <>
+                            <KeyIcon className="h-5 w-5" />
+                            Generate New Key
+                          </>
+                        )}
+                      </button>
+                    </div>
+                    {generateApiKeyMutation.isError && (
+                      <p className="mt-4 text-error text-sm text-center">
+                        {generateApiKeyMutation.error?.message || "Failed to generate API key"}
+                      </p>
+                    )}
                  </motion.section>
                )}
 

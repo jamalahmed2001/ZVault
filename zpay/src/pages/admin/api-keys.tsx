@@ -86,8 +86,8 @@ export default function AdminApiKeys() {
             ) : data?.apiKeys?.length ? (
               data.apiKeys.map((key: any) => (
                 <tr key={key.id}>
-                  <td className="px-4 py-3 font-mono text-xs truncate max-w-xs">
-                    {key.key ? key.key.substring(0, 10) + '...' : 'N/A'}
+                  <td className="px-4 py-3 font-mono text-xs break-all">
+                    {key.key || 'N/A'}
                   </td>
                   <td className="px-4 py-3 text-xs">
                     {editingId === key.id ? (

@@ -8,6 +8,10 @@ import { promisify } from 'util';
 
 const execAsync = promisify(exec);
 
+export const config = {
+  maxDuration: 300, // 5 min — pnpm install + vite build takes time
+};
+
 type Data = {
   downloadLink?: string;
   error?: string;
@@ -23,7 +27,15 @@ export default async function handler(
     return res.status(405).end(`Method ${req.method} Not Allowed`);
   }
 
-  const { apiKey, targetServerIp } = req.body;
+  const startTime = Date.now();
+  const log = (msg: string) => console.log(`[${new Date().toISOString()}] ${msg}`);
+
+  const { apiKey, targetServerIp, transactionFee, zcashAddress } = req.body;
+
+  log(`Starting custom package generation for server: ${targetServerIp}`);
+  log(`API Key: ${apiKey.substring(0, 8)}...`);
+  log(`Transaction Fee: ${transactionFee ?? 'not provided'}`);
+  log(`Zcash Address: ${zcashAddress || 'not provided'}`);
 
   if (!apiKey || !targetServerIp) {
     return res.status(400).json({ error: 'Missing required parameters: apiKey or targetServerIp.' });
@@ -31,12 +43,18 @@ export default async function handler(
 
   const productDir = path.resolve(process.cwd(), 'src', 'server', 'PRODUCT');
   const zpayDir = path.join(productDir, 'ZPAY');
+  const frontendDir = path.join(productDir, 'Z-vault-admin');
   const createDbSqlPath = path.join(zpayDir, 'create-db.sql');
   const envPath = path.join(zpayDir, '.env');
   const envExamplePath = path.join(zpayDir, '.env.example');
+  const frontendEnvPath = path.join(frontendDir, '.env');
   const releaseDir = path.join(productDir, 'release');
   const tempZipFileName = `custom-package-${Date.now()}.zip`;
-  const tempZipPath = path.join(process.cwd(), 'public', tempZipFileName); // Store in public for now
+  const tempZipPath = path.join(process.cwd(), 'public', tempZipFileName);
+
+  log(`Product directory: ${productDir}`);
+  log(`Release directory: ${releaseDir}`);
+  log(`Output zip: ${tempZipFileName}`);
 
   // Ensure public directory exists
   try {
@@ -49,115 +67,201 @@ export default async function handler(
 
   let originalCreateDbSqlContent: string | null = null;
   let originalEnvContent: string | null = null;
+  let originalFrontendEnvContent: string | null = null;
+  let frontendEnvExisted = false;
   let envExisted = false;
   let envExampleUsed = false;
 
   try {
     // 0. Cleanup previous release directory if it exists
+    log('[Step 0/6] Cleaning up previous release directory...');
     try {
       await fsPromises.rm(releaseDir, { recursive: true, force: true });
-      console.log('Cleaned up previous release directory.');
+      log('✓ Cleaned up previous release directory.');
     } catch (cleanupError) {
-      console.warn('Could not cleanup previous release directory, it might not exist:', cleanupError);
+      log('⚠ Could not cleanup previous release directory, it might not exist (continuing...)');
     }
 
-
     // 1. Backup and Modify create-db.sql
-    console.log('Reading create-db.sql...');
-    originalCreateDbSqlContent = await fsPromises.readFile(createDbSqlPath, 'utf-8');
-    let modifiedDbSql = originalCreateDbSqlContent;
+    log('[Step 1/6] Modifying create-db.sql...');
+    try {
+      originalCreateDbSqlContent = await fsPromises.readFile(createDbSqlPath, 'utf-8');
+      let modifiedDbSql = originalCreateDbSqlContent;
 
-    // Remove Zcash address replacement logic
-    // Only replace API key for 'apikey1'
-    modifiedDbSql = modifiedDbSql.replace(
-      /(INSERT INTO "ApiKey" \(id, key, "userId", "transactionFee", "isActive", "updatedAt"\)\s*VALUES \('apikey1', ')[^']*/,
-      `$1${apiKey}`
-    );
-    
-    await fsPromises.writeFile(createDbSqlPath, modifiedDbSql, 'utf-8');
-    console.log('Modified create-db.sql.');
+      // Replace API key placeholder
+      modifiedDbSql = modifiedDbSql.replace(
+        /(INSERT INTO "ApiKey" \(id, key, "userId", "transactionFee", "isActive", "updatedAt"\)\s*VALUES \('apikey1', ')[^']*/,
+        `$1${apiKey}`
+      );
+
+      // Replace Zcash address placeholder
+      if (zcashAddress) {
+        modifiedDbSql = modifiedDbSql.replace(
+          /(VALUES \('userid1', ')[^']*/,
+          `$1${zcashAddress}`
+        );
+      }
+
+      // Replace transaction fee placeholder
+      if (transactionFee !== undefined && transactionFee !== null) {
+        modifiedDbSql = modifiedDbSql.replace(
+          /(\(SELECT id FROM new_user\), )[0-9.]+(?=, TRUE)/,
+          `$1${transactionFee}`
+        );
+      }
+
+      await fsPromises.writeFile(createDbSqlPath, modifiedDbSql, 'utf-8');
+      log('✓ Modified create-db.sql: API key, Zcash address, and transaction fee updated.');
+    } catch (e: any) {
+      if (e.code === 'ENOENT') {
+        log('⚠ create-db.sql not found. Skipping SQL file modification.');
+        originalCreateDbSqlContent = null;
+      } else {
+        throw e;
+      }
+    }
 
     // 2. Backup and Modify/Create .env file
-    console.log('Processing .env file...');
+    log('[Step 2/6] Processing ZPAY .env file...');
     try {
       originalEnvContent = await fsPromises.readFile(envPath, 'utf-8');
       envExisted = true;
     } catch (e: any) {
       if (e.code === 'ENOENT') {
-        console.log('.env not found, checking for .env.example');
+        log('  .env not found, checking for .env.example...');
         try {
-          originalEnvContent = await fsPromises.readFile(envExamplePath, 'utf-8'); // "Backup" example
+          originalEnvContent = await fsPromises.readFile(envExamplePath, 'utf-8');
           envExampleUsed = true;
-          await fsPromises.copyFile(envExamplePath, envPath); // Copy example to .env
-          console.log('Copied .env.example to .env');
+          await fsPromises.copyFile(envExamplePath, envPath);
+          log('  ✓ Copied .env.example to .env');
         } catch (exExample: any) {
           if (exExample.code === 'ENOENT') {
-            console.log('.env.example also not found. Will create a new .env');
-            originalEnvContent = null; // No original content if creating new
+            log('  .env.example also not found. Will create a new .env');
+            originalEnvContent = null;
           } else {
-            throw exExample; // Other error reading example file
+            throw exExample;
           }
         }
       } else {
-        throw e; // Other error reading .env file
+        throw e;
       }
     }
     
     let currentEnvContent = envExisted ? originalEnvContent! : (envExampleUsed ? originalEnvContent! : '');
-    // Add/Update TARGET_SERVER_IP. This is a simple append/replace.
-    // A more robust solution might involve parsing and updating specific lines.
     const ipLine = `TARGET_SERVER_IP=${targetServerIp}`;
     if (currentEnvContent.includes('TARGET_SERVER_IP=')) {
       currentEnvContent = currentEnvContent.replace(/TARGET_SERVER_IP=.*/, ipLine);
+      log(`  Updated TARGET_SERVER_IP to ${targetServerIp}`);
     } else {
-      currentEnvContent += (currentEnvContent ? '\\n' : '') + ipLine;
+      currentEnvContent += (currentEnvContent ? '\n' : '') + ipLine;
+      log(`  Added TARGET_SERVER_IP=${targetServerIp}`);
     }
     await fsPromises.writeFile(envPath, currentEnvContent, 'utf-8');
-    console.log('Modified/created .env file.');
+    log('✓ Modified/created ZPAY .env file.');
+
+    // 2.5. Backup and Modify Z-vault-admin .env (Vite bakes VITE_* at build time)
+    log('[Step 3/6] Processing Z-vault-admin .env...');
+    try {
+      originalFrontendEnvContent = await fsPromises.readFile(frontendEnvPath, 'utf-8');
+      frontendEnvExisted = true;
+    } catch (e: any) {
+      if (e.code !== 'ENOENT') throw e;
+      originalFrontendEnvContent = null;
+    }
+
+    const backendUrl = `http://${targetServerIp}:5001`;
+    const frontendEnv = `VITE_API_KEY=${apiKey}\nVITE_API_BASE_URL=${backendUrl}\n`;
+    await fsPromises.writeFile(frontendEnvPath, frontendEnv, 'utf-8');
+    log(`  ✓ Set VITE_API_BASE_URL=${backendUrl}`);
+    log(`  ✓ Set VITE_API_KEY=${apiKey.substring(0, 12)}...`);
 
     // 3. Execute release.sh
-    console.log('Executing release.sh...');
-    // Ensure release.sh is executable
-    await execAsync(`chmod +x ${path.join(productDir, 'release.sh')}`);
-    
-    const { stdout: releaseStdout, stderr: releaseStderr } = await execAsync('bash release.sh', { cwd: productDir });
-    console.log('release.sh stdout:', releaseStdout);
-    if (releaseStderr) {
-      console.error('release.sh stderr:', releaseStderr);
-      // Depending on the script, stderr might not always mean a fatal error.
-      // For now, we'll proceed but log it. If it's critical, throw an error here.
+    log('[Step 4/6] Executing release.sh (this may take 1-2 minutes)...');
+    const releaseScriptPath = path.join(productDir, 'release.sh');
+    try {
+      await fsPromises.access(releaseScriptPath);
+      log(`  Found release.sh at ${releaseScriptPath}`);
+    } catch (e: any) {
+      if (e.code === 'ENOENT') {
+        throw new Error(`release.sh not found at ${releaseScriptPath}. This script is required to build and package the application.`);
+      } else {
+        throw e;
+      }
     }
-    console.log('Executed release.sh.');
+    
+    log('  Making release.sh executable...');
+    await execAsync(`chmod +x ${releaseScriptPath}`);
+    
+    const buildStartTime = Date.now();
+    log('  Starting build process (packaging ZPAY backend + building Z-vault-admin frontend)...');
+    log('  This includes: pnpm install, vite build, file copying...');
+    
+    const { stdout: releaseStdout, stderr: releaseStderr } = await execAsync('bash release.sh', {
+      cwd: productDir,
+      maxBuffer: 50 * 1024 * 1024,
+      timeout: 5 * 60 * 1000,
+    });
+    
+    const buildDuration = ((Date.now() - buildStartTime) / 1000).toFixed(1);
+    log(`✓ Build completed in ${buildDuration}s`);
+    
+    if (releaseStdout) {
+      const stdoutLines = releaseStdout.split('\n').filter(l => l.trim());
+      log(`  Build output (${stdoutLines.length} lines):`);
+      stdoutLines.slice(0, 20).forEach(line => log(`    ${line}`));
+      if (stdoutLines.length > 20) log(`    ... and ${stdoutLines.length - 20} more lines`);
+    }
+    
+    if (releaseStderr) {
+      log(`⚠ Build stderr output:`);
+      const stderrLines = releaseStderr.split('\n').filter(l => l.trim());
+      stderrLines.slice(0, 10).forEach(line => log(`    ${line}`));
+      if (stderrLines.length > 10) log(`    ... and ${stderrLines.length - 10} more lines`);
+    }
 
     // 4. Zip the output
-    console.log('Zipping the release directory...');
+    log('[Step 5/6] Creating zip archive...');
+    const zipStartTime = Date.now();
     await new Promise<void>((resolve, reject) => {
       const output = createWriteStream(tempZipPath);
       const archive = archiver('zip', {
-        zlib: { level: 9 } // Sets the compression level.
+        zlib: { level: 9 }
+      });
+
+      let totalBytes = 0;
+      archive.on('entry', (entry) => {
+        totalBytes += entry.stats?.size || 0;
+        if (totalBytes % (10 * 1024 * 1024) === 0) {
+          log(`  Compressing... ${(totalBytes / 1024 / 1024).toFixed(1)}MB processed`);
+        }
       });
 
       output.on('close', () => {
-        console.log(`Archive created: ${archive.pointer()} total bytes`);
+        const zipDuration = ((Date.now() - zipStartTime) / 1000).toFixed(1);
+        const sizeMB = (archive.pointer() / 1024 / 1024).toFixed(2);
+        log(`✓ Archive created: ${sizeMB}MB in ${zipDuration}s`);
         resolve();
       });
       archive.on('warning', (err) => {
         if (err.code === 'ENOENT') {
-          console.warn('Archiver warning:', err);
+          log(`⚠ Archiver warning: ${err.message}`);
         } else {
           reject(err);
         }
       });
       archive.on('error', (err) => reject(err));
       archive.pipe(output);
-      archive.directory(releaseDir, false); // Add the 'release' directory itself to the zip
+      archive.directory(releaseDir, false);
       archive.finalize();
     });
-    console.log(`Zipped to ${tempZipPath}`);
+    log(`✓ Zip saved to: ${tempZipPath}`);
 
     // 5. Provide download link
-    const downloadLink = `/api/download-package?file=${tempZipFileName}`; // You'll need another API route for this
-    console.log(`Generated download link: ${downloadLink}`);
+    log('[Step 6/6] Package generation complete!');
+    const totalDuration = ((Date.now() - startTime) / 1000).toFixed(1);
+    log(`Total time: ${totalDuration}s`);
+    const downloadLink = `/api/download-package?file=${tempZipFileName}`;
+    log(`Download link: ${downloadLink}`);
     
     // For now, we send the link and expect client to hit another endpoint
     // Or, we could stream the file directly here if preferred.
@@ -169,48 +273,69 @@ export default async function handler(
     res.status(200).json({ downloadLink: `/${tempZipFileName}` }); // Direct link to public file
 
   } catch (error: any) {
-    console.error('Error generating custom package:', error);
+    const errorDuration = ((Date.now() - startTime) / 1000).toFixed(1);
+    log(`✗ ERROR after ${errorDuration}s: ${error.message}`);
+    if (error.stdout) log(`  Command stdout: ${error.stdout.substring(0, 500)}`);
+    if (error.stderr) log(`  Command stderr: ${error.stderr.substring(0, 500)}`);
+    console.error('Full error:', error);
     res.status(500).json({ error: 'Failed to generate custom package.', details: error.message });
   } finally {
     // 6. Cleanup: Revert changes
-    console.log('Starting cleanup...');
+    log('Starting cleanup (reverting modified files)...');
     if (originalCreateDbSqlContent) {
       try {
         await fsPromises.writeFile(createDbSqlPath, originalCreateDbSqlContent, 'utf-8');
-        console.log('Reverted create-db.sql.');
-      } catch (revertError) {
-        console.error('Failed to revert create-db.sql:', revertError);
+        log('  ✓ Reverted create-db.sql');
+      } catch (revertError: any) {
+        if (revertError.code === 'ENOENT') {
+          log('  ⚠ create-db.sql was deleted, skipping revert');
+        } else {
+          log(`  ✗ Failed to revert create-db.sql: ${revertError.message}`);
+        }
       }
     }
 
     if (envExisted && originalEnvContent) {
       try {
         await fsPromises.writeFile(envPath, originalEnvContent, 'utf-8');
-        console.log('Reverted .env file.');
+        log('  ✓ Reverted ZPAY .env');
       } catch (revertError) {
-        console.error('Failed to revert .env file:', revertError);
+        log(`  ✗ Failed to revert ZPAY .env: ${revertError}`);
       }
-    } else if (envExampleUsed) { // If .env was created from .env.example
+    } else if (envExampleUsed) {
       try {
         await fsPromises.unlink(envPath);
-        console.log('Deleted temporary .env file (created from example).');
+        log('  ✓ Deleted temporary ZPAY .env (created from example)');
       } catch (deleteError) {
-        console.error('Failed to delete temporary .env file:', deleteError);
+        log(`  ✗ Failed to delete temporary ZPAY .env: ${deleteError}`);
       }
-    } else if (!envExisted && !envExampleUsed && originalEnvContent === null) { // If .env was created from scratch
-        try {
-            await fsPromises.unlink(envPath);
-            console.log('Deleted newly created .env file.');
-        } catch (deleteError) {
-            console.error('Failed to delete newly created .env file:', deleteError);
-        }
+    } else if (!envExisted && !envExampleUsed && originalEnvContent === null) {
+      try {
+        await fsPromises.unlink(envPath);
+        log('  ✓ Deleted newly created ZPAY .env');
+      } catch (deleteError) {
+        log(`  ✗ Failed to delete newly created ZPAY .env: ${deleteError}`);
+      }
     }
     
-    // Note: The zip file in 'public/' is not cleaned up here automatically.
-    // This should be handled, e.g., by a cron job or a separate cleanup mechanism.
-    // Also, the 'release' directory itself could be cleaned up if not needed after zipping.
-    // await fs.rm(releaseDir, { recursive: true, force: true }); // Optional: cleanup release dir
-    console.log('Cleanup finished.');
+    // Revert Z-vault-admin .env
+    if (frontendEnvExisted && originalFrontendEnvContent !== null) {
+      try {
+        await fsPromises.writeFile(frontendEnvPath, originalFrontendEnvContent, 'utf-8');
+        log('  ✓ Reverted Z-vault-admin .env');
+      } catch (revertError) {
+        log(`  ✗ Failed to revert Z-vault-admin .env: ${revertError}`);
+      }
+    } else if (!frontendEnvExisted) {
+      try {
+        await fsPromises.unlink(frontendEnvPath);
+        log('  ✓ Deleted temporary Z-vault-admin .env');
+      } catch (deleteError: any) {
+        if (deleteError.code !== 'ENOENT') log(`  ✗ Failed to delete Z-vault-admin .env: ${deleteError.message}`);
+      }
+    }
+
+    log('✓ Cleanup finished.');
   }
 }
 

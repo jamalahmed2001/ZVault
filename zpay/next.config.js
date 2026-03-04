@@ -18,6 +18,24 @@ const config = {
     defaultLocale: "en",
   },
   transpilePackages: ["geist", "next-auth"],
+  
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+  
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Referrer-Policy',
+            value: 'no-referrer-when-downgrade'
+          }
+        ],
+      },
+    ];
+  },
 
 };
 

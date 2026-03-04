@@ -686,9 +686,11 @@ export default function Home() {
                   setAddressInfo(null);
                   setPolling(false);
                   try {
-                    const res = await fetch('http://212.159.12.235:5001/create', {
+                    const res = await fetch('https://api.v3nture.link/create', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 
+                        'Content-Type': 'application/json',
+                      },
                       body: JSON.stringify({
                         api_key: apiKey,
                         user_id: userId,
@@ -697,11 +699,16 @@ export default function Home() {
                       }),
                       referrerPolicy: 'no-referrer'
                     });
+                    
+                    if (!res.ok) {
+                      const errorData = await res.json().catch(() => ({ message: `HTTP error! status: ${res.status}` }));
+                      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
+                    }
+                    
                     const data = await res.json();
                     setResponse(data);
                     setPolling(true);
                   } catch (err) {
-                    // setError((err instanceof Error) ? err : String(err));
                     setError((err instanceof Error) ? err.message : String(err));
                   } finally {
                     setLoading(false);
@@ -714,7 +721,7 @@ export default function Home() {
                   async function poll() {
                     try {
                       const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                      const res = await fetch(`http://212.159.12.235:5001/address?${params.toString()}`, {
+                      const res = await fetch(`https://api.v3nture.link/address?${params.toString()}`, {
                         referrerPolicy: 'no-referrer'
                       });
                       const data = await res.json();
@@ -726,7 +733,7 @@ export default function Home() {
                         setLogError(null);
                         setLogContent(null);
                         try {
-                          const logRes = await fetch(`http://212.159.12.235:5001/shared-log?${params.toString()}`, {
+                          const logRes = await fetch(`https://api.v3nture.link/shared-log?${params.toString()}`, {
                             referrerPolicy: 'no-referrer'
                           });
                           if (!logRes.ok) {
@@ -772,7 +779,13 @@ export default function Home() {
                           <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique User ID (Auto-Generated)</label>
                           <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={userId} onChange={e => setUserId(e.target.value)} />
                         </div>
-                        <button onClick={handleSend} disabled={loading || !apiKey || !invoiceId || !amount} className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed" style={{ background: 'var(--color-primary)' }}>
+                        <button 
+                          type="button"
+                          onClick={handleSend} 
+                          disabled={loading || !apiKey || !invoiceId || !amount} 
+                          className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed" 
+                          style={{ background: 'var(--color-primary)' }}
+                        >
                           {loading ? 'Sending...' : 'Initiate Test Transaction'}
                         </button>
                         <button
@@ -830,7 +843,7 @@ export default function Home() {
                                   style={{ background: 'var(--color-primary)' }}
                                   onClick={async () => {
                                     const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                                    const res = await fetch(`http://212.159.12.235:5001/address?${params.toString()}`, {
+                                    const res = await fetch(`https://api.v3nture.link/address?${params.toString()}`, {
                                       referrerPolicy: 'no-referrer'
                                     });
                                     const data = await res.json();
@@ -863,7 +876,7 @@ export default function Home() {
                             setLogContent(null);
                             const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
                             try {
-                              const logRes = await fetch(`http://212.159.12.235:5001/shared-log?${params.toString()}`, {
+                              const logRes = await fetch(`https://api.v3nture.link/shared-log?${params.toString()}`, {
                                 referrerPolicy: 'no-referrer'
                               });
                               if (!logRes.ok) {

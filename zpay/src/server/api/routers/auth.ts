@@ -190,6 +190,7 @@ export const authRouter = createTRPCRouter({
             first_name: true,
             last_name: true,
             phone: true,
+            zcashAddress: true,
             stripeCustomerId: true,
           }
         });
