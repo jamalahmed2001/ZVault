@@ -1,4 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
+import { getUserConfigByApiKey } from '../db';
 
 export default async function transactionsRoute(fastify: FastifyInstance) {
   fastify.get('/transactions', async (request: FastifyRequest, reply: FastifyReply) => {
@@ -6,48 +7,59 @@ export default async function transactionsRoute(fastify: FastifyInstance) {
     try {
       const q = (request.query || {}) as Record<string, string | undefined>;
 
+      // Auth: require a valid api_key on every call. The route used to be
+      // wide-open which leaked the full transaction history to anyone who
+      // knew the URL. Closes the T0 audit gap.
+      const apiKey = q.api_key
+        || (request.headers.authorization?.startsWith('Bearer ')
+              ? request.headers.authorization.slice(7) : '');
+      let merchant;
+      try {
+        merchant = await getUserConfigByApiKey(fastify, apiKey);
+      } catch {
+        return reply.status(401).send({ error: 'Unauthorized' });
+      }
+
       // Direct lookup by invoice_id — used by AnswerMePro's verifyAndActivate
       // (and any third-party merchant doing the same). Returns
-      // { transaction: <row|null> } (singular shape).
+      // { transaction: <row|null> } (singular shape). Scoped to the
+      // calling merchant's api key id so one tenant cannot read another's
+      // invoices.
       if (q.invoice_id) {
         const { rows } = await client.query(
-          `SELECT * FROM "Transaction" WHERE "invoiceId" = $1 LIMIT 1`,
-          [q.invoice_id],
+          `SELECT * FROM "Transaction"
+            WHERE "invoiceId" = $1
+              AND "apiKeyId" = $2
+            LIMIT 1`,
+          [q.invoice_id, merchant.apiKeyId],
         );
         return reply.send({ transaction: rows[0] ?? null });
       }
 
-      // Check for query param to include old/cancelled transactions
+      // List query — also scoped to the calling merchant.
       const includeOld = q.include_old === 'true';
-      let sql;
-      let params: any[] = [];
-      if (includeOld) {
-        sql = 'SELECT * FROM "Transaction" ORDER BY "createdAt" DESC';
-      } else {
-        sql = `SELECT * FROM "Transaction"
-          WHERE NOT (
-            "createdAt" < NOW() - INTERVAL '24 hours'
-            AND ("txHashes" IS NULL OR array_length("txHashes", 1) = 0)
-            AND ("addressesUsed" IS NULL OR array_length("addressesUsed", 1) = 0)
-            AND "completedAt" IS NULL
-          )
-          ORDER BY "createdAt" DESC`;
-      }
-      const { rows: transactions } = await client.query(sql, params);
+      const baseFilter = includeOld
+        ? `"apiKeyId" = $1`
+        : `"apiKeyId" = $1 AND NOT (
+              "createdAt" < NOW() - INTERVAL '24 hours'
+              AND ("txHashes" IS NULL OR array_length("txHashes", 1) = 0)
+              AND ("addressesUsed" IS NULL OR array_length("addressesUsed", 1) = 0)
+              AND "completedAt" IS NULL
+            )`;
+      const params: any[] = [merchant.apiKeyId];
+      const { rows: transactions } = await client.query(
+        `SELECT * FROM "Transaction" WHERE ${baseFilter} ORDER BY "createdAt" DESC`,
+        params,
+      );
 
-      // SQL for statistics
-      const allTimeSql = 'SELECT COUNT(*) as count FROM "Transaction"';
-      const todaySql = `SELECT COUNT(*) as count FROM "Transaction" WHERE "createdAt" >= date_trunc('day', CURRENT_TIMESTAMP)`;
-      // PostgreSQL date_trunc('week', ...) considers Monday the first day of the week.
-      const thisWeekSql = `SELECT COUNT(*) as count FROM "Transaction" WHERE "createdAt" >= date_trunc('week', CURRENT_TIMESTAMP)`;
-      const thisMonthSql = `SELECT COUNT(*) as count FROM "Transaction" WHERE "createdAt" >= date_trunc('month', CURRENT_TIMESTAMP)`;
-
-      // Execute count queries
+      // Stats also scoped to merchant.
+      const statSqls = (clause: string) =>
+        `SELECT COUNT(*) AS count FROM "Transaction" WHERE "apiKeyId" = $1 ${clause}`;
       const [allTimeResult, todayResult, thisWeekResult, thisMonthResult] = await Promise.all([
-        client.query(allTimeSql),
-        client.query(todaySql),
-        client.query(thisWeekSql),
-        client.query(thisMonthSql),
+        client.query(statSqls(''), [merchant.apiKeyId]),
+        client.query(statSqls(`AND "createdAt" >= date_trunc('day', CURRENT_TIMESTAMP)`), [merchant.apiKeyId]),
+        client.query(statSqls(`AND "createdAt" >= date_trunc('week', CURRENT_TIMESTAMP)`), [merchant.apiKeyId]),
+        client.query(statSqls(`AND "createdAt" >= date_trunc('month', CURRENT_TIMESTAMP)`), [merchant.apiKeyId]),
       ]);
 
       const statistics = {

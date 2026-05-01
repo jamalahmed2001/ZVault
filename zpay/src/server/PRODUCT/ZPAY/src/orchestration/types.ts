@@ -33,6 +33,18 @@ export interface WorkflowData {
   lastError?: string;
   webhookUrl?: string | null;
   webhookSecret?: string | null;
+  /** RSA-OAEP-SHA256 ciphertext (base64) of W1's BIP-39 seed. */
+  w1EscrowedSeed?: EscrowedSeedRecord;
+  /** RSA-OAEP-SHA256 ciphertext (base64) of W2's BIP-39 seed. */
+  w2EscrowedSeed?: EscrowedSeedRecord;
+}
+
+export interface EscrowedSeedRecord {
+  cipher: string;
+  birthday: number;
+  pubkeyFingerprint: string;
+  algo: 'rsa-oaep-sha256';
+  ts: string;
 }
 
 export interface WorkflowRecord {

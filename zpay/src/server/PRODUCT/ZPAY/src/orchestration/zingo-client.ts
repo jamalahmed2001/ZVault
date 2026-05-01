@@ -278,6 +278,32 @@ export class ZingoClient {
     return ZingoClient.parseJson<AddressEntry[]>(raw);
   }
 
+  /**
+   * Returns the wallet's seed phrase + birthday height so we can escrow
+   * recovery material. Only safe to call AFTER the wallet has been
+   * initialized (i.e. after initWallet()).
+   *
+   * NEVER log the return value — caller must encrypt it before persisting.
+   */
+  async recoveryInfo(): Promise<{ seed: string; birthday: number; rawAccounts: number }> {
+    const raw = await this.run(['recovery_info']);
+    const json = ZingoClient.extractJsonObject(raw) ?? raw;
+    let parsed: any;
+    try { parsed = JSON.parse(json); } catch { /* fall through */ }
+    if (!parsed || typeof parsed !== 'object') {
+      throw new ZingoError(`recovery_info: unparseable output: ${raw.slice(0, 200)}`, raw);
+    }
+    const seed = parsed.seed_phrase ?? parsed.seed;
+    if (typeof seed !== 'string' || seed.split(/\s+/).length < 12) {
+      throw new ZingoError('recovery_info: missing/invalid seed phrase', raw);
+    }
+    return {
+      seed,
+      birthday: Number(parsed.birthday ?? 0),
+      rawAccounts: Number(parsed.num_accounts ?? 1),
+    };
+  }
+
   async quickshield(): Promise<{ txid?: string; raw: string }> {
     const raw = await this.run(['quickshield']);
     if (raw.includes('"error"') || raw.includes('Err(')) {

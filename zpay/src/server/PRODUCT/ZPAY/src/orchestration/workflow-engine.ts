@@ -6,6 +6,7 @@ import { config } from '../config';
 import { getWebhookConfigByUserId } from '../db';
 import fs from 'fs/promises';
 import path from 'path';
+import { publicEncrypt, constants as cryptoConstants, createPublicKey } from 'node:crypto';
 
 interface StatusUpdate {
   status: string;
@@ -204,11 +205,37 @@ async function executeStage(
           JSON.stringify({ unified_address: w2Unified }),
         );
 
+        // Capture seed phrases for escrow BEFORE any funds arrive. If the
+        // VM dies between SEND_FEE and SEND_W2_TO_EXODUS we'd otherwise
+        // strand ~£1 in W1 or W2 with no recovery. Seeds are encrypted
+        // with the offline master key — plaintext never persists.
+        let w1Escrow: EscrowedSeed | null = null;
+        let w2Escrow: EscrowedSeed | null = null;
+        try {
+          if (config.seedEscrowPubkey) {
+            const w1Rec = await w1Client.recoveryInfo();
+            const w2Rec = await w2Client.recoveryInfo();
+            w1Escrow = escrowSeed(w1Rec.seed, w1Rec.birthday);
+            w2Escrow = escrowSeed(w2Rec.seed, w2Rec.birthday);
+            logStage(containerName, stage, `Seed escrow OK (fp=${w1Escrow?.pubkeyFingerprint.slice(0, 12)}...)`);
+          } else {
+            logStage(containerName, stage, 'Seed escrow disabled (ZVAULT_SEED_ESCROW_PUBKEY unset)');
+          }
+        } catch (e) {
+          // Escrow failure is logged but doesn't block the workflow —
+          // the alternative is failing 100% of payments because of an
+          // operational config issue. Loud log so it's noticed.
+          log.error(`Seed escrow capture FAILED: ${(e as Error).message}`);
+          logStage(containerName, stage, `WARN: seed escrow failed: ${(e as Error).message.slice(0, 150)}`);
+        }
+
         const updatedData: WorkflowData = {
           ...data,
           w1TransparentAddr: w1Taddr,
           w1UnifiedAddr: w1Unified,
           w2UnifiedAddr: w2Unified,
+          ...(w1Escrow ? { w1EscrowedSeed: w1Escrow } : {}),
+          ...(w2Escrow ? { w2EscrowedSeed: w2Escrow } : {}),
         };
 
         logStage(containerName, stage, `W1 t-addr: ${w1Taddr.slice(0, 12)}...${w1Taddr.slice(-6)} | unified: ${w1Unified.slice(0, 12)}...`);
@@ -745,12 +772,29 @@ async function postWebhook(
   try {
     const urlOrigin = (() => { try { return new URL(url).origin; } catch { return '(invalid-url)'; } })();
     log.info(`Sending webhook to ${urlOrigin} for transaction ${txid}`);
+
+    // Always send the bearer token for backwards-compat with v1 receivers.
+    // If a signing secret is configured, ALSO send an HMAC signature with
+    // a unix timestamp + body hash so the receiver can verify integrity
+    // and reject replays older than its tolerance window.
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${secret}`,
+    };
+    const signingSecret = config.webhookSigningSecret;
+    if (signingSecret) {
+      const { createHash, createHmac, randomBytes } = await import('node:crypto');
+      const ts = Math.floor(Date.now() / 1000).toString();
+      const nonce = randomBytes(8).toString('hex');
+      const bodyHash = createHash('sha256').update(payload).digest('hex');
+      const signed = `t=${ts}:n=${nonce}:b=${bodyHash}`;
+      const sig = createHmac('sha256', signingSecret).update(signed).digest('hex');
+      headers['X-ZPay-Signature'] = `t=${ts},n=${nonce},s=${sig}`;
+    }
+
     const res = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${secret}`,
-      },
+      headers,
       body: payload,
     });
     if (res.ok) {
@@ -856,4 +900,70 @@ export async function retryUndeliveredWebhooks(fastify: FastifyInstance, log: an
 
 function sleep(ms: number): Promise<void> {
   return new Promise(r => setTimeout(r, ms));
+}
+
+// ── Seed escrow ──────────────────────────────────────────────────────
+//
+// At INIT_WALLETS we capture each per-invoice wallet's BIP-39 seed phrase
+// and encrypt it against an offline master public key (RSA-OAEP-SHA256).
+// The master *private* key NEVER touches the VM — it lives in cold storage
+// (Exodus / 1Password / paper backup).
+//
+// Recovery procedure (offline):
+//   1. Dump the encryptedSeed ciphertext from Transaction.workflowData
+//   2. Base64-decode → raw bytes
+//   3. openssl pkeyutl -decrypt -inkey escrow-priv.pem -pkeyopt \
+//        rsa_padding_mode:oaep -pkeyopt rsa_oaep_md:sha256 \
+//        -in cipher.bin -out seed.txt
+//   4. zingo-cli --import-seed --birthday $birthday $(cat seed.txt)
+//   5. zingo-cli sync && zingo-cli send <recovery-addr> all
+//
+// If ZVAULT_SEED_ESCROW_PUBKEY is unset, escrow is skipped (legacy mode —
+// recovery impossible). Workflow proceeds normally.
+
+interface EscrowedSeed {
+  /** RSA-OAEP-SHA256 ciphertext of the seed phrase, base64. */
+  cipher: string;
+  /** Wallet birthday (block height) — needed for fast rescan on recovery. */
+  birthday: number;
+  /** SHA-256 fingerprint of the master pubkey, hex. Identifies which
+   *  private key to use if you ever rotate the escrow keypair. */
+  pubkeyFingerprint: string;
+  /** Algorithm marker for forward compat. */
+  algo: 'rsa-oaep-sha256';
+  /** Wall-clock timestamp of escrow capture (ISO). */
+  ts: string;
+}
+
+let cachedPubkeyFp: { fp: string; key: ReturnType<typeof createPublicKey> } | null = null;
+function getEscrowPubkey() {
+  const pem = config.seedEscrowPubkey;
+  if (!pem) return null;
+  if (cachedPubkeyFp) return cachedPubkeyFp;
+  const key = createPublicKey(pem);
+  const der = key.export({ type: 'spki', format: 'der' }) as Buffer;
+  const { createHash } = require('node:crypto') as typeof import('node:crypto');
+  const fp = createHash('sha256').update(der).digest('hex');
+  cachedPubkeyFp = { key, fp };
+  return cachedPubkeyFp;
+}
+
+function escrowSeed(seed: string, birthday: number): EscrowedSeed | null {
+  const pubkey = getEscrowPubkey();
+  if (!pubkey) return null;
+  const cipher = publicEncrypt(
+    {
+      key: pubkey.key,
+      padding: cryptoConstants.RSA_PKCS1_OAEP_PADDING,
+      oaepHash: 'sha256',
+    },
+    Buffer.from(seed, 'utf8'),
+  ).toString('base64');
+  return {
+    cipher,
+    birthday,
+    pubkeyFingerprint: pubkey.fp,
+    algo: 'rsa-oaep-sha256',
+    ts: new Date().toISOString(),
+  };
 }

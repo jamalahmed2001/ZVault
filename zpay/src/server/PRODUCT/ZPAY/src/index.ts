@@ -33,12 +33,22 @@ const server: FastifyInstance = Fastify({
 
 async function main() {
     try {
-        // Register CORS
+        // Register CORS — locked down to a configurable allowlist.
+        // Server-to-server callers (AnswerMePro Vercel functions) don't
+        // send Origin headers, so they're allowed transparently. Browsers
+        // get a strict origin check.
+        const allowed = config.corsAllowedOrigins;
+        const allowAll = allowed.length === 1 && allowed[0] === '*';
         await server.register(import('@fastify/cors'), {
-             origin: "*", // Configure allowed origins properly for production
+             origin: (origin, cb) => {
+                 if (!origin) return cb(null, true);   // server-to-server / curl
+                 if (allowAll) return cb(null, true);
+                 if (allowed.includes(origin)) return cb(null, true);
+                 return cb(null, false);
+             },
              methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
         });
-        server.log.info('CORS enabled');
+        server.log.info(`CORS enabled (origins=${allowAll ? '*' : allowed.join(',')})`);
 
         // Setup Database Connection Pool
         await setupDb(server); // setupDb logs success/failure

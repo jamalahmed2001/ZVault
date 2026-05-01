@@ -28,6 +28,25 @@ export const config = {
     zingoBinaryPath: process.env.ZINGO_CLI_PATH || 'zingo-cli',
     zingoDataDir: path.resolve(process.env.ZINGO_DATA_DIR || './zingo-wallet'),
     lightwalletdServer: process.env.LIGHTWALLETD_SERVER || undefined,
+
+    // CORS: comma-separated allowlist of origins. Default locks to the
+    // production AnswerMePro origins so the public Funnel can't be hit
+    // from arbitrary browsers. Set CORS_ALLOWED_ORIGINS=* explicitly
+    // only for dev/admin testing.
+    corsAllowedOrigins: (process.env.CORS_ALLOWED_ORIGINS
+        || 'https://answerme.pro,https://www.answerme.pro,https://admin.answerme.pro'
+    ).split(',').map(s => s.trim()).filter(Boolean),
+
+    // Seed escrow public key for encrypting per-invoice wallet seeds.
+    // Format: age recipient (`age1...`). Master private key MUST live
+    // off-host (Exodus / 1Password / cold paper). Optional — if unset,
+    // workflow runs without escrow (legacy behaviour, recovery impossible).
+    seedEscrowPubkey: process.env.ZVAULT_SEED_ESCROW_PUBKEY || undefined,
+
+    // Webhook signing secret (HMAC). Optional — if unset, webhook signing
+    // is skipped and the merchant should fall back to bearer-only auth.
+    // Both sides must share this secret.
+    webhookSigningSecret: process.env.ZVAULT_WEBHOOK_SIGNING_SECRET || undefined,
 };
 
 // Ensure shared base directory exists on startup
