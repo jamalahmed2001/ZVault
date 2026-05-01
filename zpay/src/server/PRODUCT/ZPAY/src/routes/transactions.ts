@@ -4,8 +4,21 @@ export default async function transactionsRoute(fastify: FastifyInstance) {
   fastify.get('/transactions', async (request: FastifyRequest, reply: FastifyReply) => {
     const client = await fastify.pg.connect();
     try {
+      const q = (request.query || {}) as Record<string, string | undefined>;
+
+      // Direct lookup by invoice_id — used by AnswerMePro's verifyAndActivate
+      // (and any third-party merchant doing the same). Returns
+      // { transaction: <row|null> } (singular shape).
+      if (q.invoice_id) {
+        const { rows } = await client.query(
+          `SELECT * FROM "Transaction" WHERE "invoiceId" = $1 LIMIT 1`,
+          [q.invoice_id],
+        );
+        return reply.send({ transaction: rows[0] ?? null });
+      }
+
       // Check for query param to include old/cancelled transactions
-      const includeOld = request.query && (request.query as any).include_old === 'true';
+      const includeOld = q.include_old === 'true';
       let sql;
       let params: any[] = [];
       if (includeOld) {

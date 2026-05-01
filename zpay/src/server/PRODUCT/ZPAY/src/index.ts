@@ -2,7 +2,7 @@ import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { config } from './config';
 import { setupDb } from './db';
 import { AppError, InternalServerError, NotFoundError } from './errors';
-import { resumePendingWorkflows, shutdownWorkflows } from './orchestration/workflow-engine';
+import { resumePendingWorkflows, retryUndeliveredWebhooks, shutdownWorkflows } from './orchestration/workflow-engine';
 
 // Import route handlers
 import createRoute from './routes/create';
@@ -109,11 +109,25 @@ async function main() {
             server.log.error(`Failed to resume pending workflows: ${err.message}`);
         });
 
+        // Periodic recovery for terminal-but-undelivered webhooks. Runs forever
+        // every 60s; each pass picks up at most 50 transactions and re-POSTs.
+        const WEBHOOK_RETRY_INTERVAL_MS = 60_000;
+        const webhookRetryTimer = setInterval(() => {
+            retryUndeliveredWebhooks(server, server.log)
+                .then(({ retried, delivered }) => {
+                    if (retried > 0) {
+                        server.log.info(`Webhook retry sweep: retried=${retried} delivered=${delivered}`);
+                    }
+                })
+                .catch(err => server.log.warn(`Webhook retry sweep failed: ${err.message}`));
+        }, WEBHOOK_RETRY_INTERVAL_MS);
+
         // Graceful Shutdown Handling
         const signals = ['SIGINT', 'SIGTERM'];
         signals.forEach((signal) => {
             process.on(signal, async () => {
                 server.log.info(`Received ${signal}, shutting down gracefully...`);
+                clearInterval(webhookRetryTimer);
                 shutdownWorkflows();
                 await server.close();
                 server.log.info('Server shut down complete.');

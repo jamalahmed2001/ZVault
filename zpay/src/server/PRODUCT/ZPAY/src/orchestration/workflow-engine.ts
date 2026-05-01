@@ -84,6 +84,13 @@ async function runWorkflow(fastify: FastifyInstance, transactionId: string, sign
       await appendSharedLog(record.containerName, `[STAGE] -> ${nextStage}`);
       record = await getWorkflowRecord(fastify, transactionId);
       if (!record) { log.error('Workflow record lost mid-execution'); return; }
+
+      // Fire-and-forget per-stage webhook for non-terminal transitions so the
+      // user-side UI can show live progress. Terminal stages get a separate
+      // retry-backed webhook below.
+      if (!TERMINAL_STAGES.has(record.workflowStage)) {
+        sendStageWebhook(log, record, record.workflowStage, fastify).catch(() => {});
+      }
     }
 
     await appendSharedLog(record.containerName, '-------------------------------------------');
@@ -91,7 +98,9 @@ async function runWorkflow(fastify: FastifyInstance, transactionId: string, sign
     await appendSharedLog(record.containerName, '========== END ==========');
     log.info(`Workflow terminal: ${record.workflowStage}`);
 
-    if (record.workflowStage === WorkflowStage.COMPLETE) {
+    // Terminal webhook — fires for both COMPLETE and FAILED. Has inline
+    // retry with backoff and persists delivery state for the cron retry path.
+    if (TERMINAL_STAGES.has(record.workflowStage)) {
       await sendUserWebhook(log, record, fastify);
     }
   } catch (err: any) {
@@ -508,6 +517,74 @@ async function getPendingWorkflows(fastify: FastifyInstance): Promise<WorkflowRe
   }
 }
 
+async function getUndeliveredWebhookTransactions(
+  fastify: FastifyInstance,
+  limit: number,
+): Promise<WorkflowRecord[]> {
+  const client = await fastify.pg.connect();
+  try {
+    const { rows } = await client.query(
+      `SELECT id, "workflowStage", "workflowData", "containerName", "failureReason"
+       FROM "Transaction"
+       WHERE "workflowStage" IN ('COMPLETE', 'FAILED')
+         AND "webhookDeliveredAt" IS NULL
+         AND ("webhookAttempts" < 100 OR "webhookAttempts" IS NULL)
+       ORDER BY "updatedAt" ASC
+       LIMIT $1`,
+      [limit],
+    );
+    return rows.map(r => ({
+      transactionId: r.id,
+      workflowStage: r.workflowStage as WorkflowStage,
+      workflowData: (r.workflowData || {}) as WorkflowData,
+      containerName: r.containerName || '',
+      failureReason: r.failureReason,
+    }));
+  } finally {
+    client.release();
+  }
+}
+
+async function markWebhookDelivered(
+  fastify: FastifyInstance,
+  transactionId: string,
+  attemptIncrement: number,
+): Promise<void> {
+  const client = await fastify.pg.connect();
+  try {
+    await client.query(
+      `UPDATE "Transaction"
+          SET "webhookDeliveredAt" = NOW(),
+              "webhookAttempts" = COALESCE("webhookAttempts", 0) + $2,
+              "webhookLastError" = NULL
+        WHERE id = $1`,
+      [transactionId, attemptIncrement],
+    );
+  } finally {
+    client.release();
+  }
+}
+
+async function markWebhookAttempt(
+  fastify: FastifyInstance,
+  transactionId: string,
+  attemptIncrement: number,
+  errMsg: string,
+): Promise<void> {
+  const client = await fastify.pg.connect();
+  try {
+    await client.query(
+      `UPDATE "Transaction"
+          SET "webhookAttempts" = COALESCE("webhookAttempts", 0) + $2,
+              "webhookLastError" = $3
+        WHERE id = $1`,
+      [transactionId, attemptIncrement, errMsg.slice(0, 1000)],
+    );
+  } finally {
+    client.release();
+  }
+}
+
 async function updateWorkflowAndStatus(
   fastify: FastifyInstance,
   transactionId: string,
@@ -582,26 +659,22 @@ function getSharedDirFromContainer(containerName: string): string {
   return path.join(config.sharedBaseDir, dbUserId, userId, invoiceId);
 }
 
-async function sendUserWebhook(log: any, record: WorkflowRecord, fastify?: FastifyInstance): Promise<void> {
+type WebhookKind = 'progress' | 'complete' | 'failed';
+
+interface WebhookSendOutcome {
+  ok: boolean;
+  statusCode?: number;
+  error?: string;
+}
+
+// Inline retry schedule for terminal webhooks. The retry-cron in index.ts
+// covers the long tail beyond this — see retryUndeliveredWebhooks().
+const TERMINAL_RETRY_DELAYS_MS = [1_000, 30_000, 5 * 60_000];
+
+function buildWebhookPayload(record: WorkflowRecord, kind: WebhookKind, stage: WorkflowStage): string {
   const data = record.workflowData;
   const parts = record.containerName.split('_');
   const dbUserId = (parts[0] || '').replace('DBUID-', '');
-  let webhookUrl = data.webhookUrl && data.webhookUrl !== 'null' ? data.webhookUrl : null;
-  let webhookSecret = data.webhookSecret && data.webhookSecret !== 'null' ? data.webhookSecret : null;
-
-  if ((!webhookUrl || !webhookSecret) && fastify) {
-    const fallback = await getWebhookConfigByUserId(fastify, dbUserId);
-    if (fallback?.url && fallback?.secret) {
-      webhookUrl = fallback.url;
-      webhookSecret = fallback.secret;
-      log.info(`Webhook credentials loaded from DB fallback for user ${dbUserId}`);
-    }
-  }
-  if (!webhookUrl || !webhookSecret) {
-    log.info(`Webhook skipped: no URL or secret configured for transaction ${record.transactionId}`);
-    return;
-  }
-
   const userId = (parts[1] || '').replace('UID-', '');
   const invoiceId = (parts[2] || '').replace('IID-', '');
   const txIds = [
@@ -610,9 +683,10 @@ async function sendUserWebhook(log: any, record: WorkflowRecord, fastify?: Fasti
     data.txidW1ToW2,
     data.txidW2ToExodus,
   ].filter(Boolean) as string[];
-  const payload = JSON.stringify({
+  return JSON.stringify({
     json: {
-      status: 'complete',
+      status: kind,
+      stage,
       transactionId: record.transactionId,
       invoiceId,
       userId,
@@ -635,28 +709,149 @@ async function sendUserWebhook(log: any, record: WorkflowRecord, fastify?: Fasti
         feePercentage: data.feePercentage ?? null,
         fundedViaShielded: data.fundedViaShielded ?? null,
       },
+      failureReason: record.failureReason ?? null,
     },
   });
+}
 
+async function resolveWebhookCreds(
+  log: any,
+  record: WorkflowRecord,
+  fastify?: FastifyInstance,
+): Promise<{ url: string; secret: string } | null> {
+  const data = record.workflowData;
+  const parts = record.containerName.split('_');
+  const dbUserId = (parts[0] || '').replace('DBUID-', '');
+  let webhookUrl = data.webhookUrl && data.webhookUrl !== 'null' ? data.webhookUrl : null;
+  let webhookSecret = data.webhookSecret && data.webhookSecret !== 'null' ? data.webhookSecret : null;
+  if ((!webhookUrl || !webhookSecret) && fastify) {
+    const fallback = await getWebhookConfigByUserId(fastify, dbUserId);
+    if (fallback?.url && fallback?.secret) {
+      webhookUrl = fallback.url;
+      webhookSecret = fallback.secret;
+    }
+  }
+  if (!webhookUrl || !webhookSecret) return null;
+  return { url: webhookUrl, secret: webhookSecret };
+}
+
+async function postWebhook(
+  log: any,
+  url: string,
+  secret: string,
+  payload: string,
+  txid: string,
+): Promise<WebhookSendOutcome> {
   try {
-    const urlOrigin = (() => { try { return new URL(webhookUrl).origin; } catch { return '(invalid-url)'; } })();
-    log.info(`Sending webhook to ${urlOrigin} for transaction ${record.transactionId}`);
-    const res = await fetch(webhookUrl, {
+    const urlOrigin = (() => { try { return new URL(url).origin; } catch { return '(invalid-url)'; } })();
+    log.info(`Sending webhook to ${urlOrigin} for transaction ${txid}`);
+    const res = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${webhookSecret}`,
+        'Authorization': `Bearer ${secret}`,
       },
       body: payload,
     });
     if (res.ok) {
-      log.info(`Webhook delivered successfully for transaction ${record.transactionId} (${res.status})`);
-    } else {
-      log.warn(`Webhook returned non-2xx for transaction ${record.transactionId}: ${res.status} ${res.statusText}`);
+      log.info(`Webhook delivered for transaction ${txid} (${res.status})`);
+      return { ok: true, statusCode: res.status };
     }
+    const errBody = await res.text().catch(() => '<unread>');
+    let errHeaders = '';
+    try {
+      errHeaders = JSON.stringify(Object.fromEntries(res.headers as any)).slice(0, 400);
+    } catch { /* ignore */ }
+    log.warn(
+      `Webhook non-2xx for transaction ${txid}: ${res.status} ${res.statusText} body=${errBody.slice(0, 300)} headers=${errHeaders}`,
+    );
+    return { ok: false, statusCode: res.status, error: `HTTP ${res.status} ${res.statusText}` };
   } catch (e) {
-    log.warn(`Webhook request failed for transaction ${record.transactionId}: ${(e as Error).message}`);
+    const msg = (e as Error).message;
+    log.warn(`Webhook request failed for transaction ${txid}: ${msg}`);
+    return { ok: false, error: msg };
   }
+}
+
+/**
+ * Fire a per-stage progress webhook. Best-effort — no retry, no persistence.
+ * AnswerMePro can use this for live UI updates; ignoring it is harmless because
+ * the COMPLETE/FAILED webhook (with its own retry + cron-driven recovery) is
+ * the source of truth for activation.
+ */
+async function sendStageWebhook(
+  log: any,
+  record: WorkflowRecord,
+  stage: WorkflowStage,
+  fastify?: FastifyInstance,
+): Promise<void> {
+  const creds = await resolveWebhookCreds(log, record, fastify);
+  if (!creds) return;
+  const payload = buildWebhookPayload(record, 'progress', stage);
+  await postWebhook(log, creds.url, creds.secret, payload, record.transactionId);
+}
+
+/**
+ * Fire a terminal (COMPLETE / FAILED) webhook with inline retries, then
+ * persist delivery state on the Transaction row. If all inline retries fail,
+ * the periodic retryUndeliveredWebhooks() cron in index.ts will keep trying
+ * indefinitely.
+ */
+async function sendUserWebhook(log: any, record: WorkflowRecord, fastify?: FastifyInstance): Promise<void> {
+  const kind: WebhookKind = record.workflowStage === WorkflowStage.COMPLETE ? 'complete' : 'failed';
+  const creds = await resolveWebhookCreds(log, record, fastify);
+  if (!creds) {
+    log.info(`Webhook skipped: no URL or secret configured for transaction ${record.transactionId}`);
+    return;
+  }
+  const payload = buildWebhookPayload(record, kind, record.workflowStage);
+  let lastError: string | undefined;
+  let attemptNumber = 0;
+  const maxAttempts = TERMINAL_RETRY_DELAYS_MS.length + 1;
+  for (let i = 0; i < maxAttempts; i++) {
+    if (i > 0) await sleep(TERMINAL_RETRY_DELAYS_MS[i - 1] ?? 0);
+    attemptNumber = i + 1;
+    const outcome = await postWebhook(log, creds.url, creds.secret, payload, record.transactionId);
+    if (outcome.ok) {
+      if (fastify) {
+        await markWebhookDelivered(fastify, record.transactionId, attemptNumber).catch((e) =>
+          log.warn(`markWebhookDelivered failed: ${(e as Error).message}`),
+        );
+      }
+      return;
+    }
+    lastError = outcome.error;
+  }
+  log.warn(`Webhook all inline retries exhausted for transaction ${record.transactionId}: ${lastError}`);
+  if (fastify) {
+    await markWebhookAttempt(fastify, record.transactionId, attemptNumber, lastError ?? 'unknown').catch((e) =>
+      log.warn(`markWebhookAttempt failed: ${(e as Error).message}`),
+    );
+  }
+}
+
+/**
+ * Periodic recovery — re-tries terminal webhooks where webhookDeliveredAt
+ * is still NULL (i.e. inline retries didn't land). Runs forever; no max
+ * attempts. Called from a Fastify scheduler.
+ */
+export async function retryUndeliveredWebhooks(fastify: FastifyInstance, log: any): Promise<{ retried: number; delivered: number }> {
+  const candidates = await getUndeliveredWebhookTransactions(fastify, 50);
+  let delivered = 0;
+  for (const record of candidates) {
+    const creds = await resolveWebhookCreds(log, record, fastify);
+    if (!creds) continue;
+    const kind: WebhookKind = record.workflowStage === WorkflowStage.COMPLETE ? 'complete' : 'failed';
+    const payload = buildWebhookPayload(record, kind, record.workflowStage);
+    const outcome = await postWebhook(log, creds.url, creds.secret, payload, record.transactionId);
+    if (outcome.ok) {
+      await markWebhookDelivered(fastify, record.transactionId, 0).catch(() => {});
+      delivered++;
+    } else {
+      await markWebhookAttempt(fastify, record.transactionId, 0, outcome.error ?? 'unknown').catch(() => {});
+    }
+  }
+  return { retried: candidates.length, delivered };
 }
 
 function sleep(ms: number): Promise<void> {
