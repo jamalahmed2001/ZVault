@@ -3,62 +3,71 @@ import fs from 'fs/promises'; // Use promises API
 import { FastifyInstance } from 'fastify';
 import { NotFoundError, InternalServerError } from './errors';
 
-// Reads the transparent address from the specific user's shared JSON file.
-export async function getUserAddressFromFile(log: FastifyInstance['log'], userSharedDir: string): Promise<string | null> {
+export interface WalletAddresses {
+    transparent: string | null;
+    shielded: string | null;
+}
+
+export async function getUserAddressesFromFile(log: FastifyInstance['log'], userSharedDir: string): Promise<WalletAddresses> {
     const addressFilePath = path.join(userSharedDir, 'wallet1-addresses.json');
-    let address: string | null = null;
+    const result: WalletAddresses = { transparent: null, shielded: null };
 
     try {
-        // Check if file exists and is not empty
         const stats = await fs.stat(addressFilePath);
         if (stats.size === 0) {
             log.warn(`Address file exists but is empty: ${addressFilePath}`);
-            return null;
+            return result;
         }
-
-        // Add a small delay? The Python version did. Might not be needed with async fs.
-        // await delay(100);
 
         const fileContent = await fs.readFile(addressFilePath, 'utf-8');
         const addressesData = JSON.parse(fileContent);
 
-        // Structure based on Python script: list containing one object
         if (Array.isArray(addressesData) && addressesData.length > 0) {
-            const receivers = addressesData[0]?.receivers;
-            if (receivers && typeof receivers.transparent === 'string') {
-                address = receivers.transparent.trim();
-            } else {
-                 log.warn(`Found address file ${addressFilePath}, but structure missing receivers.transparent string.`);
+            const entry = addressesData[0];
+            const receivers = entry?.receivers;
+            if (receivers) {
+                if (typeof receivers.transparent === 'string') result.transparent = receivers.transparent.trim();
+                if (typeof receivers.sapling === 'string') result.shielded = receivers.sapling.trim();
             }
-        } else if (typeof addressesData === 'object' && addressesData !== null && typeof addressesData.transparent_address === 'string') {
-             // Fallback for direct object structure
-             address = addressesData.transparent_address.trim();
+            // unified address as shielded fallback
+            const unified = entry?.address || entry?.encoded_address;
+            if (!result.shielded && typeof unified === 'string' && unified.startsWith('u1')) {
+                result.shielded = unified.trim();
+            }
+        } else if (typeof addressesData === 'object' && addressesData !== null) {
+            if (typeof addressesData.transparent_address === 'string') result.transparent = addressesData.transparent_address.trim();
+            const shielded = addressesData.sapling_address || addressesData.unified_address;
+            if (typeof shielded === 'string') result.shielded = shielded.trim();
         } else {
-             log.warn(`Found address file ${addressFilePath}, but structure is unexpected: ${JSON.stringify(addressesData).substring(0, 100)}`);
+            log.warn(`Address file ${addressFilePath} has unexpected structure: ${JSON.stringify(addressesData).substring(0, 100)}`);
         }
 
-
-        if (address && !address.startsWith('t')) {
-            log.warn(`Address read from ${addressFilePath} does not look like a t-address: ${address}`);
-            return null; // Invalidate if it doesn't look right
+        if (result.transparent && !result.transparent.startsWith('t')) {
+            log.warn(`Address from ${addressFilePath} does not look like a t-address: ${result.transparent}`);
+            result.transparent = null;
+        }
+        if (result.shielded && !result.shielded.startsWith('z') && !result.shielded.startsWith('u1')) {
+            log.warn(`Address from ${addressFilePath} does not look like a shielded address: ${result.shielded}`);
+            result.shielded = null;
         }
 
-        return address;
-
+        return result;
     } catch (error: any) {
         if (error.code === 'ENOENT') {
             log.debug(`Address file does not exist yet: ${addressFilePath}`);
-            return null; // File not found is expected before container writes it
         } else if (error instanceof SyntaxError) {
-             log.error(`Could not decode JSON from address file: ${addressFilePath}`);
-             // Don't throw, just return null, maybe log error level
-             return null;
+            log.error(`Could not decode JSON from address file: ${addressFilePath}`);
         } else {
             log.error(`Unexpected error reading address file ${addressFilePath}: ${error.message || error}`);
-            // Depending on policy, could throw InternalServerError or just return null
-            return null;
         }
+        return result;
     }
+}
+
+// Backward-compat wrapper — returns only the transparent address
+export async function getUserAddressFromFile(log: FastifyInstance['log'], userSharedDir: string): Promise<string | null> {
+    const { transparent } = await getUserAddressesFromFile(log, userSharedDir);
+    return transparent;
 }
 
 

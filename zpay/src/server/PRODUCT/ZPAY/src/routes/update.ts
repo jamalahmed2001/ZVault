@@ -53,7 +53,18 @@ export default async function updateRoute(fastify: FastifyInstance) {
             log.debug({ txHashes, addressesUsed, status }, 'Transaction data being processed.');
 
             // --- Update Transaction ---
-            const statusToUpdate = status === 'complete' ? 'complete' : undefined;
+            const STATUS_MAP: Record<string, string> = {
+                'complete': 'COMPLETED',
+                'completed': 'COMPLETED',
+                'COMPLETED': 'COMPLETED',
+                'failed': 'FAILED',
+                'FAILED': 'FAILED',
+                'processing': 'PROCESSING',
+                'PROCESSING': 'PROCESSING',
+                'received': 'RECEIVED',
+                'RECEIVED': 'RECEIVED',
+            };
+            const statusToUpdate = status ? STATUS_MAP[status] ?? status.toUpperCase() : undefined;
 
             const updated = await updateTransactionSharedData(
                 fastify,

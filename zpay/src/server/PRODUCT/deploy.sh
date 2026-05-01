@@ -48,15 +48,24 @@ else
   echo -e "${GREEN}Docker found: $(docker --version)${NC}"
 fi
 
-# Load Docker image from tar if present
-if [ -f ./zcash-wallets.tar ]; then
-  echo -e "${YELLOW}Loading Docker image from ./zcash-wallets.tar...${NC}"
-  docker load -i ./zcash-wallets.tar
-elif [ -f ./release/zcash-wallets.tar ]; then
-  echo -e "${YELLOW}Loading Docker image from ./release/zcash-wallets.tar...${NC}"
-  docker load -i ./release/zcash-wallets.tar
-else
-  echo -e "${YELLOW}No zcash-wallets.tar found to load Docker image.${NC}"
+# Build or load Docker image. Prefer rebuild on server for correct platform (arm64/amd64).
+DEPLOY_DIR="."
+[ -f ./release/dockerfile ] && DEPLOY_DIR="./release"
+if [ -f "$DEPLOY_DIR/dockerfile" ] && [ -f "$DEPLOY_DIR/run.sh" ]; then
+  echo -e "${YELLOW}Building Docker image (zcash-wallets) for host platform...${NC}"
+  (cd "$DEPLOY_DIR" && docker build -f dockerfile -t zcash-wallets .) && echo -e "${GREEN}Docker image built.${NC}" || \
+  echo -e "${RED}Docker build failed. Trying to load from tar if present.${NC}"
+fi
+if ! docker image inspect zcash-wallets &>/dev/null; then
+  if [ -f ./zcash-wallets.tar ]; then
+    echo -e "${YELLOW}Loading Docker image from ./zcash-wallets.tar...${NC}"
+    docker load -i ./zcash-wallets.tar
+  elif [ -f ./release/zcash-wallets.tar ]; then
+    echo -e "${YELLOW}Loading Docker image from ./release/zcash-wallets.tar...${NC}"
+    docker load -i ./release/zcash-wallets.tar
+  else
+    echo -e "${YELLOW}No zcash-wallets image. Build from release/ or provide zcash-wallets.tar.${NC}"
+  fi
 fi
 
 # 4. Check/Install PostgreSQL

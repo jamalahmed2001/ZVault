@@ -2,7 +2,7 @@ import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { getUserConfigByApiKey, insertTransactionRecord, getTransactionCountByUser, getTransactionCountByUserThisMonth, getValidLicenseKey, upsertLicenseKey } from '../db';
 import { getZecPriceForGbpAmount } from '../price';
 import { startUserContainer } from '../docker';
-import { quantizeDecimal } from '../utils';
+import { quantizeDecimal, getSafeDockerName } from '../utils';
 import { config } from '../config';
 import Decimal from 'decimal.js';
 import path from 'path';
@@ -11,7 +11,9 @@ import { CreateContainerJobData } from '../types';
 import { getAccessToken, verifyToken, incrementUsage } from '../utils';
 import fs from 'fs';
 import { initiateSwap } from '../exolix';
-import { getUserAddressFromFile } from '../shared';
+import { getUserAddressFromFile, getUserAddressesFromFile } from '../shared';
+import { WorkflowStage, WorkflowData } from '../orchestration/types';
+import { startWorkflow } from '../orchestration/workflow-engine';
 
 interface CreateRequestBody {
     api_key?: string;
@@ -201,27 +203,54 @@ export default async function createRoute(fastify: FastifyInstance) {
             };
 
             // --- Start Container Asynchronously ---
+            const containerName = getSafeDockerName(dbUserId, clientUserId, invoiceId);
             await startUserContainer(fastify, jobData);
 
-            // --- Try to get address if available ---
-            let address: string | null = null;
+            // --- Initialize workflow state in DB ---
+            const workflowData: WorkflowData = {
+              feePercentage: feePercentageStr,
+              exodusWallet,
+              feeDestinationAddr: exodusWallet,
+              webhookUrl: webhookUrl ?? null,
+              webhookSecret: webhookSecret ?? null,
+            };
+
+            const pgClient = await fastify.pg.connect();
             try {
-                address = await getUserAddressFromFile(log, userSharedDir);
-            } catch (e: any) {
-                log.warn(`Could not fetch address at create: ${e.message}`);
+              await pgClient.query(
+                `UPDATE "Transaction"
+                 SET "workflowStage" = $1, "workflowData" = $2, "containerName" = $3, "updatedAt" = NOW()
+                 WHERE id = $4`,
+                [WorkflowStage.BOOTSTRAP_CONTAINER, JSON.stringify(workflowData), containerName, transactionId],
+              );
+            } finally {
+              pgClient.release();
             }
 
-            log.info(`Transaction ${transactionId} created and container creation initiated for UID: ${clientUserId}, IID: ${invoiceId}.`);
+            // --- Kick off deterministic orchestration (async, non-blocking) ---
+            startWorkflow(fastify, transactionId, containerName);
+
+            // --- Try to get addresses if available ---
+            let addresses = { transparent: null as string | null, shielded: null as string | null };
+            try {
+                addresses = await getUserAddressesFromFile(log, userSharedDir);
+            } catch (e: any) {
+                log.warn(`Could not fetch addresses at create: ${e.message}`);
+            }
+
+            log.info(`Transaction ${transactionId} created and workflow initiated for UID: ${clientUserId}, IID: ${invoiceId}.`);
 
             const quantizerDisplay = new Decimal(config.zecQuantizer);
             const zecDisplayAmount = quantizeDecimal(initialZecAmount, quantizerDisplay);
+            const hasAddress = addresses.transparent || addresses.shielded;
 
             return reply.code(202).send({
                 status: 'processing',
-                message: address ? 'Transaction accepted, address available.' : 'Transaction accepted, address generation in progress. Please poll the /address endpoint.',
+                message: hasAddress ? 'Transaction accepted, address available.' : 'Transaction accepted, address generation in progress. Please poll the /address endpoint.',
                 transaction_id: transactionId,
                 zec_amount_initial: parseFloat(zecDisplayAmount.toString()),
-                address: address || undefined
+                address: addresses.transparent || undefined,
+                shielded_address: addresses.shielded || undefined,
             });
         } catch (err: any) {
             // Handle all errors gracefully and return proper error code

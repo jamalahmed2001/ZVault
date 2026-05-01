@@ -2,6 +2,7 @@ import Fastify, { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify'
 import { config } from './config';
 import { setupDb } from './db';
 import { AppError, InternalServerError, NotFoundError } from './errors';
+import { resumePendingWorkflows, shutdownWorkflows } from './orchestration/workflow-engine';
 
 // Import route handlers
 import createRoute from './routes/create';
@@ -11,6 +12,7 @@ import transactionsRoute from './routes/transactions';
 import userConfigRoute from './routes/userConfig';
 import updateRoute from './routes/update';
 import payoutRoute from './routes/payout';
+import fundRoute from './routes/fund';
 import healthRoute from './routes/health';
 
 const server: FastifyInstance = Fastify({
@@ -49,6 +51,7 @@ async function main() {
         await server.register(userConfigRoute);
         await server.register(updateRoute);
         await server.register(payoutRoute);
+        await server.register(fundRoute);
         await server.register(healthRoute);
         server.log.info('Routes registered');
 
@@ -101,14 +104,18 @@ async function main() {
         // Start Listening
         await server.listen({ port: config.apiPort, host: config.host });
 
+        // Resume any workflows that were in-flight when the server last stopped
+        resumePendingWorkflows(server).catch(err => {
+            server.log.error(`Failed to resume pending workflows: ${err.message}`);
+        });
+
         // Graceful Shutdown Handling
         const signals = ['SIGINT', 'SIGTERM'];
         signals.forEach((signal) => {
             process.on(signal, async () => {
                 server.log.info(`Received ${signal}, shutting down gracefully...`);
+                shutdownWorkflows();
                 await server.close();
-                // Close DB pool if @fastify/postgres doesn't handle it automatically on close
-                // await server.pg.pool.end(); // Check documentation if needed
                 server.log.info('Server shut down complete.');
                 process.exit(0);
             });

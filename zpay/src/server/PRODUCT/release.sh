@@ -36,6 +36,8 @@ done
 log "  Copying shared directory..."
 cp -r shared ../release/ZPAY/
 cd "$SCRIPT_DIR"
+# Copy run.sh into ZPAY release so it can be bind-mounted into containers at runtime
+[ -f run.sh ] && cp run.sh release/ZPAY/ && log "  ✓ Copied run.sh into ZPAY (bind-mounted at runtime)"
 log "[2/4] ✓ Backend packaged"
 
 # --- Frontend (Z-vault-admin) ---
@@ -68,6 +70,10 @@ log "[4/4] ✓ Frontend built and packaged"
 log "Copying deployment files..."
 cp deploy.sh release/
 [ -f ecosystem.config.js ] && cp ecosystem.config.js release/
-[ -f zcash-wallets.tar ] && cp zcash-wallets.tar release/ && log "  ✓ Copied zcash-wallets.tar"
+[ -f dockerfile ] && cp dockerfile release/ && log "  ✓ Copied dockerfile (for server-side rebuild)"
+[ -f run.sh ] && cp run.sh release/ && log "  ✓ Copied run.sh to release root (for server-side rebuild)"
+
+# Docker image: built on server by deploy.sh for correct platform. Mac build skipped to avoid arch mismatch.
+log "  Docker image will be built on server by deploy.sh (includes dockerfile, run.sh)"
 
 log "✓ All components packaged in ./release/"

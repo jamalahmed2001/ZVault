@@ -1,13 +1,10 @@
--- Drop type and tables for idempotency (dev only, remove in prod!)
-DROP TYPE IF EXISTS public."TransactionStatus" CASCADE;
-DROP TABLE IF EXISTS "WebhookConfig" CASCADE;
-DROP TABLE IF EXISTS "Transaction" CASCADE;
-DROP TABLE IF EXISTS "LicenseKey" CASCADE;
-DROP TABLE IF EXISTS "ApiKey" CASCADE;
-DROP TABLE IF EXISTS "User" CASCADE;
+-- ZPAY Database Schema (idempotent — safe to re-run without data loss)
 
--- 1. Add TransactionStatus enum type
-CREATE TYPE public."TransactionStatus" AS ENUM ('PENDING', 'RECEIVED', 'PROCESSING', 'COMPLETED', 'FAILED');
+-- 1. TransactionStatus enum
+DO $$ BEGIN
+    CREATE TYPE public."TransactionStatus" AS ENUM ('PENDING', 'RECEIVED', 'PROCESSING', 'COMPLETED', 'FAILED');
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
@@ -42,8 +39,8 @@ CREATE TABLE IF NOT EXISTS "ApiKey" (
 -- WebhookConfig Table
 CREATE TABLE IF NOT EXISTS "WebhookConfig" (
     id character varying(191) DEFAULT gen_random_uuid() NOT NULL PRIMARY KEY,
-    url character varying(191) NOT NULL,
-    secret character varying(191) NOT NULL,
+    url character varying(191),
+    secret character varying(191),
     "isActive" boolean DEFAULT true NOT NULL,
     "createdAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
     "updatedAt" timestamp(3) without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
@@ -78,15 +75,24 @@ CREATE TABLE IF NOT EXISTS "LicenseKey" (
     "accessToken" text
 );
 
--- Constraints and Indexes (no IF NOT EXISTS for constraints)
-ALTER TABLE "ApiKey"
-    ADD CONSTRAINT "ApiKey_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+-- Constraints and Indexes (idempotent using IF NOT EXISTS / DO blocks)
+DO $$ BEGIN
+    ALTER TABLE "ApiKey" ADD CONSTRAINT "ApiKey_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE UNIQUE INDEX IF NOT EXISTS "ApiKey_key_key" ON "ApiKey" USING btree (key);
 
-ALTER TABLE "Transaction"
-    ADD CONSTRAINT "Transaction_apiKeyId_fkey" FOREIGN KEY ("apiKeyId") REFERENCES "ApiKey"(id) ON UPDATE CASCADE ON DELETE SET NULL;
-ALTER TABLE "Transaction"
-    ADD CONSTRAINT "Transaction_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+DO $$ BEGIN
+    ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_apiKeyId_fkey"
+        FOREIGN KEY ("apiKeyId") REFERENCES "ApiKey"(id) ON UPDATE CASCADE ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE "Transaction" ADD CONSTRAINT "Transaction_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES "User"(id) ON UPDATE CASCADE ON DELETE RESTRICT;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 CREATE INDEX IF NOT EXISTS "Transaction_apiKeyId_idx" ON "Transaction" USING btree ("apiKeyId");
 CREATE INDEX IF NOT EXISTS "Transaction_createdAt_idx" ON "Transaction" USING btree ("createdAt");
 CREATE INDEX IF NOT EXISTS "Transaction_invoiceId_idx" ON "Transaction" USING btree ("invoiceId");
@@ -96,18 +102,36 @@ CREATE INDEX IF NOT EXISTS "Transaction_userId_idx" ON "Transaction" USING btree
 CREATE UNIQUE INDEX IF NOT EXISTS "User_email_key" ON "User" USING btree (email);
 CREATE UNIQUE INDEX IF NOT EXISTS "User_username_key" ON "User" USING btree (username);
 
-ALTER TABLE "WebhookConfig"
-    ADD CONSTRAINT "WebhookConfig_userId_key" UNIQUE ("userId");
-ALTER TABLE "WebhookConfig"
-    ADD CONSTRAINT "WebhookConfig_apiKeyId_fkey" FOREIGN KEY ("apiKeyId") REFERENCES "ApiKey"(id) ON DELETE SET NULL;
-ALTER TABLE "WebhookConfig"
-    ADD CONSTRAINT "WebhookConfig_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE;
+DO $$ BEGIN
+    ALTER TABLE "WebhookConfig" ADD CONSTRAINT "WebhookConfig_userId_key" UNIQUE ("userId");
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE "WebhookConfig" ADD CONSTRAINT "WebhookConfig_apiKeyId_fkey"
+        FOREIGN KEY ("apiKeyId") REFERENCES "ApiKey"(id) ON DELETE SET NULL;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
+DO $$ BEGIN
+    ALTER TABLE "WebhookConfig" ADD CONSTRAINT "WebhookConfig_userId_fkey"
+        FOREIGN KEY ("userId") REFERENCES "User"(id) ON DELETE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- (Leave this out if you want to always use the script for inserts)
-WITH new_user AS (
-    INSERT INTO "User" (id, "zcashAddress")
-    VALUES ('userid1', 'test')
-    RETURNING id
-)
+-- Workflow columns on Transaction (for deterministic orchestration)
+ALTER TABLE "Transaction" ADD COLUMN IF NOT EXISTS "workflowStage" text;
+ALTER TABLE "Transaction" ADD COLUMN IF NOT EXISTS "workflowData" jsonb;
+ALTER TABLE "Transaction" ADD COLUMN IF NOT EXISTS "containerName" text;
+ALTER TABLE "Transaction" ADD COLUMN IF NOT EXISTS "failureReason" text;
+
+CREATE INDEX IF NOT EXISTS "Transaction_workflowStage_idx"
+  ON "Transaction" USING btree ("workflowStage")
+  WHERE "workflowStage" IS NOT NULL;
+
+-- Seed default user + API key (only if not already present)
+INSERT INTO "User" (id, "zcashAddress")
+VALUES ('userid1', 'test')
+ON CONFLICT (id) DO NOTHING;
+
 INSERT INTO "ApiKey" (id, key, "userId", "transactionFee", "isActive", "updatedAt")
-VALUES ('apikey1', 'zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa', (SELECT id FROM new_user), 2.5, TRUE, CURRENT_TIMESTAMP);
+VALUES ('apikey1', 'zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa', 'userid1', 2.5, TRUE, CURRENT_TIMESTAMP)
+ON CONFLICT (id) DO NOTHING;

@@ -16,13 +16,18 @@ const requiredEnv = (key: string): string => {
 export const config = {
     databaseUrl: requiredEnv('DATABASE_URL'),
     dockerImageName: requiredEnv('DOCKER_IMAGE_NAME'),
-    sharedBaseDir: path.resolve(process.env.SHARED_BASE_DIR || './shared'), // Ensure absolute path
-    cmcApiKey: process.env.CMC_API_KEY, // Optional
+    sharedBaseDir: path.resolve(process.env.SHARED_BASE_DIR || './shared'),
+    cmcApiKey: process.env.CMC_API_KEY,
     logLevel: (process.env.LOG_LEVEL || 'info') as LogLevel,
     apiPort: parseInt(process.env.API_PORT || '5001', 10),
     host: process.env.HOST || '0.0.0.0',
-    decimalPrecision: 20, // Precision for Decimal calculations
-    zecQuantizer: '0.00000001', // 8 decimal places for ZEC
+    decimalPrecision: 20,
+    zecQuantizer: '0.00000001',
+
+    // Host zingo-cli config (for /fund endpoint)
+    zingoBinaryPath: process.env.ZINGO_CLI_PATH || 'zingo-cli',
+    zingoDataDir: path.resolve(process.env.ZINGO_DATA_DIR || './zingo-wallet'),
+    lightwalletdServer: process.env.LIGHTWALLETD_SERVER || undefined,
 };
 
 // Ensure shared base directory exists on startup

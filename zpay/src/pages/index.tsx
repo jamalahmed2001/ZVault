@@ -108,6 +108,270 @@ const goldTaglineStyle = {
   boxShadow: "0 2px 8px rgba(212,175,55,0.2)"
 };
 
+const ZPAY_API_URL = process.env.NEXT_PUBLIC_ZPAY_API_URL || 'https://api.v3nture.link';
+
+function randomString(len = 8) {
+  return Math.random().toString(36).substring(2, 2 + len);
+}
+
+function loadPersistedForm() {
+  if (typeof window === 'undefined') return null;
+  try {
+    const saved = localStorage.getItem('zvault_live_api_test');
+    if (saved) return JSON.parse(saved);
+  } catch { /* ignore */ }
+  return null;
+}
+
+const DEFAULT_API_KEY = 'zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa';
+const DEFAULT_USER_ID = 'user_placeholder';
+const DEFAULT_INVOICE_ID = 'inv_placeholder';
+
+function LiveApiTest() {
+  const [apiKey, setApiKey] = useState(DEFAULT_API_KEY);
+  const [userId, setUserId] = useState(DEFAULT_USER_ID);
+  const [invoiceId, setInvoiceId] = useState(DEFAULT_INVOICE_ID);
+  const [amount, setAmount] = useState('1000');
+  const [response, setResponse] = useState<object | null>(null);
+  const [addressInfo, setAddressInfo] = useState<object | null>(null);
+  const [hasSentRequest, setHasSentRequest] = useState(false);
+  const [logContent, setLogContent] = useState<string | null>(null);
+  const [logError, setLogError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [polling, setPolling] = useState(false);
+  const pollingRef = useRef<number | undefined>(undefined);
+  const [logLoading, setLogLoading] = useState(false);
+  const hasHydratedRef = useRef(false);
+
+  useEffect(() => {
+    const p = loadPersistedForm();
+    if (p) {
+      setApiKey(p.apiKey || DEFAULT_API_KEY);
+      setUserId(p.userId || randomString(10));
+      setInvoiceId(p.invoiceId || randomString(8));
+      setAmount(p.amount || '1000');
+      setResponse(p.response ?? null);
+      setAddressInfo(p.addressInfo ?? null);
+      setHasSentRequest(p.hasSentRequest ?? false);
+      setLogContent(p.logContent ?? null);
+      setLogError(p.logError ?? null);
+    } else {
+      setUserId(randomString(10));
+      setInvoiceId(randomString(8));
+    }
+    hasHydratedRef.current = true;
+  }, []);
+
+  useEffect(() => {
+    if (!hasHydratedRef.current || typeof window === 'undefined') return;
+    localStorage.setItem('zvault_live_api_test', JSON.stringify({
+      apiKey, userId, invoiceId, amount,
+      response, addressInfo, hasSentRequest, logContent, logError,
+    }));
+  }, [apiKey, userId, invoiceId, amount, response, addressInfo, hasSentRequest, logContent, logError]);
+
+  const handleSend = async () => {
+    setHasSentRequest(true);
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+    setAddressInfo(null);
+    setPolling(false);
+    try {
+      const url = ZPAY_API_URL.replace(/\/$/, '');
+      const res = await fetch(`${url}/create`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ api_key: apiKey, user_id: userId, invoice_id: invoiceId, amount }),
+        referrerPolicy: 'no-referrer',
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || `HTTP ${res.status}`);
+      }
+      const data = await res.json();
+      setResponse(data);
+      setPolling(true);
+    } catch (err) {
+      setError((err instanceof Error) ? err.message : String(err));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (!polling) return;
+    let stopped = false;
+    async function poll() {
+      try {
+        const url = ZPAY_API_URL.replace(/\/$/, '');
+        const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
+        const res = await fetch(`${url}/address?${params}`, { referrerPolicy: 'no-referrer' });
+        const data = await res.json();
+        setAddressInfo(data);
+        if ((data.address && data.address !== 'Not Available Yet') || data.not_found) {
+          setPolling(false);
+          setLogLoading(true);
+          setLogError(null);
+          setLogContent(null);
+          try {
+            const logRes = await fetch(`${url}/shared-log?${params}`, { referrerPolicy: 'no-referrer' });
+            if (logRes.ok) setLogContent(await logRes.text());
+            else setLogError('Failed to fetch log');
+          } catch (e: unknown) {
+            setLogError(e instanceof Error ? e.message : 'Failed to fetch log');
+          } finally {
+            setLogLoading(false);
+          }
+          return;
+        }
+        if (!stopped) pollingRef.current = window.setTimeout(poll, 2000);
+      } catch (e) {
+        setPolling(false);
+        setError((e instanceof Error) ? e.message : String(e));
+      }
+    }
+    poll();
+    return () => { stopped = true; clearTimeout(pollingRef.current as number | undefined); };
+  }, [polling, apiKey, userId, invoiceId]);
+
+  return (
+    <div className={"flex flex-col gap-4 rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]"} style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
+      <div className="flex flex-col md:flex-row gap-8 w-full">
+        <motion.div
+          className="w-full mb-6 md:mb-0"
+          animate={{ width: hasSentRequest ? '50%' : '100%' }}
+          transition={{ type: 'spring', stiffness: 200, damping: 30 }}
+          style={{ minWidth: 0 }}
+        >
+          <div className="mb-4">
+            <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key (Test Key Provided)</label>
+            <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Enter your API key" />
+            <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP pence, e.g., 1000 for £10.00)</label>
+            <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={amount} onChange={e => setAmount(e.target.value)} />
+            <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique Invoice ID (Auto-Generated)</label>
+            <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={invoiceId} onChange={e => setInvoiceId(e.target.value)} />
+            <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique User ID (Auto-Generated)</label>
+            <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={userId} onChange={e => setUserId(e.target.value)} />
+          </div>
+          <button
+            type="button"
+            onClick={handleSend}
+            disabled={loading || !apiKey || !invoiceId || !amount}
+            className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'var(--color-primary)' }}
+          >
+            {loading ? 'Sending...' : 'Initiate Test Transaction'}
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setApiKey('zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
+              setUserId(randomString(10));
+              setInvoiceId(randomString(8));
+              setAmount('1000');
+              setResponse(null);
+              setAddressInfo(null);
+              setHasSentRequest(false);
+              setLogContent(null);
+              setLogError(null);
+            }}
+            className="ml-3 rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
+            style={{ background: 'var(--color-primary)' }}
+            disabled={loading}
+          >
+            Reset Form
+          </button>
+          {error && <div className="mt-4 text-red-400">Error: {error}</div>}
+        </motion.div>
+        <AnimatePresence>
+          {hasSentRequest && (
+            <motion.div
+              className="md:w-1/2 w-full flex flex-col"
+              initial={{ opacity: 0, x: 40 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 40 }}
+              transition={{ type: 'spring', stiffness: 120, damping: 20 }}
+            >
+              {response && (
+                <>
+                  <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Create Endpoint Response:</div>
+                  <motion.pre
+                    className="mb-4 rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]"
+                    style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.1 }}
+                  >
+                    {JSON.stringify(response, null, 2)}
+                  </motion.pre>
+                </>
+              )}
+              {polling && <motion.div className="mb-4 text-[var(--color-accent)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>Polling for address...</motion.div>}
+              {addressInfo && (
+                <motion.div className="mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
+                  <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Address Endpoint Response:</div>
+                  <pre className="rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(addressInfo, null, 2)}</pre>
+                  <button
+                    className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
+                    style={{ background: 'var(--color-primary)' }}
+                    onClick={async () => {
+                      const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
+                      const res = await fetch(`${ZPAY_API_URL.replace(/\/$/, '')}/address?${params}`, { referrerPolicy: 'no-referrer' });
+                      const data = await res.json();
+                      setAddressInfo(data);
+                    }}
+                  >
+                    Refresh Address Status
+                  </button>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+      {addressInfo && (
+        <motion.div className="w-full" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
+          <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Shielding Process Log:</div>
+          {logLoading && <div className="text-[var(--color-accent)]">Loading log...</div>}
+          {logError && <div className="text-red-400">Error: {logError}</div>}
+          {logContent && (
+            <pre className="rounded p-4 text-xs overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace', maxHeight: 300 }}>{logContent}</pre>
+          )}
+          <button
+            className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
+            style={{ background: 'var(--color-primary)' }}
+            onClick={async () => {
+              setLogLoading(true);
+              setLogError(null);
+              setLogContent(null);
+              const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
+              try {
+                const logRes = await fetch(`${ZPAY_API_URL.replace(/\/$/, '')}/shared-log?${params}`, {
+                  referrerPolicy: 'no-referrer'
+                });
+                if (!logRes.ok) {
+                  const errData = await logRes.json().catch(() => ({}));
+                  throw new Error(errData.message || 'Failed to fetch log');
+                }
+                const logText = await logRes.text();
+                setLogContent(logText);
+              } catch (e: unknown) {
+                setLogError(e instanceof Error ? e.message : 'Failed to fetch log');
+              } finally {
+                setLogLoading(false);
+              }
+            }}
+          >
+            Refresh Log
+          </button>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
 export default function Home() {
   const { data: sessionData } = useSession();
   const currentYear = new Date().getFullYear();
@@ -608,299 +872,10 @@ export default function Home() {
               <span className="inline-block px-4 py-1.5 mb-3 text-sm font-semibold rounded-full" style={goldTaglineStyle}>Live API Test</span>
               <h2 className={headingClasses.sectionLight}>Experience Real-Time Shielded Transactions</h2>
               <p className="mx-auto max-w-xl text-lg mt-4 text-[var(--color-foreground-dark-alt)]">
-                Witness the power of ZVault AutoShield firsthand. Use the interactive form below to simulate a shielded Zcash payment request via our API. See how effortlessly you can generate secure, private, and auditable transactions—all processed on your own (simulated) infrastructure.
+                Witness the power of ZVault AutoShield firsthand. Use the interactive form below to simulate a shielded Zcash payment request with your API key.
               </p>
             </div>
-            {/* Inline React component for live test */}
-            {(() => {
-              function LiveApiTest() {
-                // Helper to generate a random string
-                function randomString(len = 8) {
-                  return Math.random().toString(36).substring(2, 2 + len);
-                }
-                
-                // Initialize state with default values
-                const [apiKey, setApiKey] = useState('zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
-                const [userId, setUserId] = useState(() => randomString(10));
-                const [invoiceId, setInvoiceId] = useState(() => randomString(8));
-                const [amount, setAmount] = useState('1000');
-                const [response, setResponse] = useState<object | null>(null);
-                const [addressInfo, setAddressInfo] = useState<object | null>(null);
-                const [hasSentRequest, setHasSentRequest] = useState(false);
-                const [logContent, setLogContent] = useState<string | null>(null);
-                const [logError, setLogError] = useState<string | null>(null);
-                
-                const [loading, setLoading] = useState(false);
-                const [error, setError] = useState<string | null>(null);
-                const [polling, setPolling] = useState(false);
-                const pollingRef = useRef<number | undefined>(undefined);
-                const [logLoading, setLogLoading] = useState(false);
-
-                // Effect to load state from localStorage on mount (client-side only)
-                useEffect(() => {
-                  if (typeof window !== 'undefined') {
-                    const savedState = localStorage.getItem('zvault_live_api_test');
-                    if (savedState) {
-                      try {
-                        const parsedState = JSON.parse(savedState);
-                        setApiKey(parsedState.apiKey || 'zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
-                        setUserId(parsedState.userId || randomString(10));
-                        setInvoiceId(parsedState.invoiceId || randomString(8));
-                        setAmount(parsedState.amount || '1000');
-                        setResponse(parsedState.response || null);
-                        setAddressInfo(parsedState.addressInfo || null);
-                        setHasSentRequest(parsedState.hasSentRequest || false);
-                        setLogContent(parsedState.logContent || null);
-                        setLogError(parsedState.logError || null);
-                      } catch (e) {
-                        console.error("Failed to parse saved state from localStorage", e);
-                        // Optionally clear corrupted localStorage item
-                        // localStorage.removeItem('zvault_live_api_test');
-                      }
-                    }
-                  }
-                }, []); // Empty dependency array ensures this runs only once on mount
-
-                // Persist state to localStorage on change (client-side only)
-                useEffect(() => {
-                  if (typeof window !== 'undefined') {
-                    localStorage.setItem('zvault_live_api_test', JSON.stringify({
-                      apiKey,
-                      userId,
-                      invoiceId,
-                      amount,
-                      response,
-                      addressInfo,
-                      hasSentRequest,
-                      logContent,
-                      logError
-                    }));
-                  }
-                }, [apiKey, userId, invoiceId, amount, response, addressInfo, hasSentRequest, logContent, logError]);
-
-                const handleSend = async () => {
-                  setHasSentRequest(true);
-                  setLoading(true);
-                  setError(null);
-                  setResponse(null);
-                  setAddressInfo(null);
-                  setPolling(false);
-                  try {
-                    const res = await fetch('https://api.v3nture.link/create', {
-                      method: 'POST',
-                      headers: { 
-                        'Content-Type': 'application/json',
-                      },
-                      body: JSON.stringify({
-                        api_key: apiKey,
-                        user_id: userId,
-                        invoice_id: invoiceId,
-                        amount: amount
-                      }),
-                      referrerPolicy: 'no-referrer'
-                    });
-                    
-                    if (!res.ok) {
-                      const errorData = await res.json().catch(() => ({ message: `HTTP error! status: ${res.status}` }));
-                      throw new Error(errorData.message || `HTTP error! status: ${res.status}`);
-                    }
-                    
-                    const data = await res.json();
-                    setResponse(data);
-                    setPolling(true);
-                  } catch (err) {
-                    setError((err instanceof Error) ? err.message : String(err));
-                  } finally {
-                    setLoading(false);
-                  }
-                };
-                // Poll /address endpoint
-                useEffect(() => {
-                  if (!polling) return;
-                  let stopped = false;
-                  async function poll() {
-                    try {
-                      const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                      const res = await fetch(`https://api.v3nture.link/address?${params.toString()}`, {
-                        referrerPolicy: 'no-referrer'
-                      });
-                      const data = await res.json();
-                      setAddressInfo(data);
-                      if ((data.address && data.address !== 'Not Available Yet') || data.not_found) {
-                        setPolling(false);
-                        // Fetch log after address is available
-                        setLogLoading(true);
-                        setLogError(null);
-                        setLogContent(null);
-                        try {
-                          const logRes = await fetch(`https://api.v3nture.link/shared-log?${params.toString()}`, {
-                            referrerPolicy: 'no-referrer'
-                          });
-                          if (!logRes.ok) {
-                            const errData = await logRes.json().catch(() => ({}));
-                            throw new Error(errData.message || 'Failed to fetch log');
-                          }
-                          const logText = await logRes.text();
-                          setLogContent(logText);
-                        } catch (e: any) {
-                          setLogError(e.message || 'Failed to fetch log');
-                        } finally {
-                          setLogLoading(false);
-                        }
-                        return;
-                      }
-                      if (!stopped) pollingRef.current = window.setTimeout(poll, 2000);
-                    } catch (e) {
-                      setPolling(false);
-                      setError((e instanceof Error) ? e.message : String(e)); // Also update error handling here
-                    }
-                  }
-                  poll();
-                  return () => { stopped = true; clearTimeout(pollingRef.current as number | undefined); };
-                }, [polling, apiKey, userId, invoiceId]);
-                return (
-                  <div className={"flex flex-col gap-4 rounded-xl shadow-lg p-8 border border-[var(--color-border-light)]"} style={{ background: 'var(--color-primary)', color: 'var(--color-accent)' }}>
-                    {/* Row: Form and Results */}
-                    <div className="flex flex-col md:flex-row gap-8 w-full">
-                      {/* Form Section with animation */}
-                      <motion.div
-                        className="w-full mb-6 md:mb-0"
-                        animate={{ width: hasSentRequest ? '50%' : '100%' }}
-                        transition={{ type: 'spring', stiffness: 200, damping: 30 }}
-                        style={{ minWidth: 0 }}
-                      >
-                        <div className="mb-4">
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>API Key (Test Key Provided)</label>
-                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={apiKey} onChange={e => setApiKey(e.target.value)} placeholder="Enter your API key" />
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique Invoice ID (Auto-Generated)</label>
-                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={invoiceId} onChange={e => setInvoiceId(e.target.value)} />
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Amount (GBP pence, e.g., 1000 for £10.00)</label>
-                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={amount} onChange={e => setAmount(e.target.value)} />
-                          <label className="block mb-1 font-semibold" style={{ color: 'var(--color-accent)' }}>Unique User ID (Auto-Generated)</label>
-                          <input className="w-full rounded border px-3 py-2 mb-3" style={{ borderColor: 'var(--color-border-light)', color: '#fff', background: 'var(--color-accent-foreground)' }} value={userId} onChange={e => setUserId(e.target.value)} />
-                        </div>
-                        <button 
-                          type="button"
-                          onClick={handleSend} 
-                          disabled={loading || !apiKey || !invoiceId || !amount} 
-                          className="rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed" 
-                          style={{ background: 'var(--color-primary)' }}
-                        >
-                          {loading ? 'Sending...' : 'Initiate Test Transaction'}
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setApiKey('zv_test_1dmRO_7pFFnCAXGfmqKSnnWdGWbDZkaa');
-                            setUserId(randomString(10));
-                            setInvoiceId(randomString(8));
-                            setAmount('1000');
-                            setResponse(null);
-                            setAddressInfo(null);
-                            setHasSentRequest(false);
-                            setLogContent(null);
-                            setLogError(null);
-                          }}
-                          className="ml-3 rounded-lg px-6 py-3 font-semibold transition duration-300 border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] disabled:opacity-50 disabled:cursor-not-allowed"
-                          style={{ background: 'var(--color-primary)' }}
-                          disabled={loading}
-                        >
-                          Reset Form
-                        </button>
-                        {error && <div className="mt-4 text-red-400">Error: {error}</div>}
-                      </motion.div>
-                      {/* Results Section */}
-                      <AnimatePresence>
-                        {hasSentRequest && (
-                          <motion.div
-                            className="md:w-1/2 w-full flex flex-col"
-                            initial={{ opacity: 0, x: 40 }}
-                            animate={{ opacity: 1, x: 0 }}
-                            exit={{ opacity: 0, x: 40 }}
-                            transition={{ type: 'spring', stiffness: 120, damping: 20 }}
-                          >
-                            {response && (
-                              <>
-                                <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Create Endpoint Response:</div>
-                                <motion.pre
-                                  className="mb-4 rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]"
-                                  style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}
-                                  initial={{ opacity: 0, y: 20 }}
-                                  animate={{ opacity: 1, y: 0 }}
-                                  transition={{ delay: 0.1 }}
-                                >
-                                  {JSON.stringify(response, null, 2)}
-                                </motion.pre>
-                              </>
-                            )}
-                            {polling && <motion.div className="mb-4 text-[var(--color-accent)]" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}>Polling for address...</motion.div>}
-                            {addressInfo && (
-                              <motion.div className="mb-4" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}>
-                                <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Address Endpoint Response:</div>
-                                <pre className="rounded p-4 text-sm overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace' }}>{JSON.stringify(addressInfo, null, 2)}</pre>
-                                <button
-                                  className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
-                                  style={{ background: 'var(--color-primary)' }}
-                                  onClick={async () => {
-                                    const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                                    const res = await fetch(`https://api.v3nture.link/address?${params.toString()}`, {
-                                      referrerPolicy: 'no-referrer'
-                                    });
-                                    const data = await res.json();
-                                    setAddressInfo(data);
-                                  }}
-                                >
-                                  Refresh Address Status
-                                </button>
-                              </motion.div>
-                            )}
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
-                    </div>
-                    {/* Log display full width, immediately below results */}
-                    {addressInfo && (
-                      <motion.div className="w-full" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }}>
-                        <div className="mb-2 font-semibold" style={{ color: 'var(--color-accent)' }}>Shielding Process Log:</div>
-                        {logLoading && <div className="text-[var(--color-accent)]">Loading log...</div>}
-                        {logError && <div className="text-red-400">Error: {logError}</div>}
-                        {logContent && (
-                          <pre className="rounded p-4 text-xs overflow-x-auto border border-[var(--color-border-light)]" style={{ background: 'var(--color-background-alt)', color: 'var(--color-primary)', fontFamily: 'Menlo, monospace', maxHeight: 300 }}>{logContent}</pre>
-                        )}
-                        <button
-                          className="mt-2 rounded-lg px-4 py-2 font-semibold border border-[var(--color-accent)] text-[var(--color-accent)] hover:bg-[var(--color-accent)] hover:text-[var(--color-accent-foreground)] transition duration-300"
-                          style={{ background: 'var(--color-primary)' }}
-                          onClick={async () => {
-                            setLogLoading(true);
-                            setLogError(null);
-                            setLogContent(null);
-                            const params = new URLSearchParams({ api_key: apiKey, user_id: userId, invoice_id: invoiceId });
-                            try {
-                              const logRes = await fetch(`https://api.v3nture.link/shared-log?${params.toString()}`, {
-                                referrerPolicy: 'no-referrer'
-                              });
-                              if (!logRes.ok) {
-                                const errData = await logRes.json().catch(() => ({}));
-                                throw new Error(errData.message || 'Failed to fetch log');
-                              }
-                              const logText = await logRes.text();
-                              setLogContent(logText);
-                            } catch (e: any) {
-                              setLogError(e.message || 'Failed to fetch log');
-                            } finally {
-                              setLogLoading(false);
-                            }
-                          }}
-                        >
-                          Refresh Log
-                        </button>
-                      </motion.div>
-                    )}
-                  </div>
-                );
-              }
-              return React.createElement(LiveApiTest);
-            })()}
+            <LiveApiTest />
           </div>
         </section>
 

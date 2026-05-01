@@ -1,12 +1,14 @@
 import { spawn, ChildProcess } from 'child_process';
 import { FastifyInstance } from 'fastify';
 import path from 'path';
-import fs from 'fs/promises'; // Use promises API
+import fs from 'fs/promises';
 import { delay, getSafeDockerName } from './utils';
 import { config } from './config';
 import { InternalServerError } from './errors';
 import { CreateContainerJobData } from './types';
 import Docker from 'dockerode';
+
+const RUN_SCRIPT_HOST_PATH = path.resolve(process.cwd(), 'run.sh');
 
 const DOCKER_CMD = 'docker'; // Or podman if preferred
 const MAX_CONCURRENT_CONTAINERS = 1000; // Tune as needed
@@ -141,8 +143,18 @@ async function actuallyStartUserContainer(fastify: FastifyInstance, jobData: Cre
 
     // 4. Run Docker command asynchronously
     try {
-        // Use Dockerode to start the container
         const docker = new Docker();
+        const binds = [`${userFolderPath}:/shared`];
+
+        // Mount host run.sh into the container to allow hotfixes without rebuilding the image
+        try {
+            await fs.access(RUN_SCRIPT_HOST_PATH);
+            binds.push(`${RUN_SCRIPT_HOST_PATH}:/app/run.sh:ro`);
+            log.info(`Mounting host run.sh from ${RUN_SCRIPT_HOST_PATH}`);
+        } catch {
+            log.warn(`No run.sh found at ${RUN_SCRIPT_HOST_PATH}, using image-baked script`);
+        }
+
         const createOptions = {
             name: containerName,
             Hostname: containerName,
@@ -152,10 +164,13 @@ async function actuallyStartUserContainer(fastify: FastifyInstance, jobData: Cre
                 `WEBHOOK_SECRET=${jobData.webhookSecret || ''}`,
                 `FEE_PERCENTAGE=${jobData.feePercentage}`,
                 `FEE_DESTINATION_ADDR=${jobData.feeDestinationAddr || ''}`,
-                `CONTAINER_TIMEOUT=${jobData.containerTimeout}`
+                `CONTAINER_TIMEOUT=${jobData.containerTimeout}`,
+                ...(process.env.LIGHTWALLETD_SERVER
+                    ? [`LIGHTWALLETD_SERVER=${process.env.LIGHTWALLETD_SERVER.replace(/localhost|127\.0\.0\.1/g, process.env.ZPAY_DOCKER_HOST_ALIAS || '172.17.0.1')}`]
+                    : []),
             ],
             HostConfig: {
-                Binds: [`${userFolderPath}:/shared`],
+                Binds: binds,
                 AutoRemove: true,
             },
             Image: config.dockerImageName,
@@ -170,8 +185,22 @@ async function actuallyStartUserContainer(fastify: FastifyInstance, jobData: Cre
         throw new InternalServerError(`Failed to initiate container creation: ${error.message || error}`);
     }
 
-    // NB: We are NOT waiting for the address file here.
-    // The client must poll the /address endpoint.
+    // The client polls /address; orchestrator drives subsequent stages via docker exec.
+}
+
+export async function stopUserContainer(log: FastifyInstance['log'], containerName: string): Promise<void> {
+    try {
+        const docker = new Docker();
+        const container = docker.getContainer(containerName);
+        await container.stop({ t: 10 });
+        log.info(`Container ${containerName} stopped.`);
+    } catch (err: any) {
+        if (err.statusCode === 304 || err.statusCode === 404) {
+            log.info(`Container ${containerName} already stopped/removed.`);
+        } else {
+            log.warn(`Failed to stop container ${containerName}: ${err.message}`);
+        }
+    }
 }
 
 // Function to get container status and runtime

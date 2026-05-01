@@ -295,32 +295,41 @@ export async function updateTransactionSharedData(
     fastify.log.info(`Attempting to update DB for UID: ${clientUserId}, IID: ${invoiceId} (User: ${dbUserId})`);
     fastify.log.debug(`  Addresses: ${JSON.stringify(addresses)}`);
     fastify.log.debug(`  TX Hashes: ${JSON.stringify(txHashes)}`);
+    fastify.log.debug(`  Status: ${statusToUpdate ?? '(unchanged)'}`);
+
+    const isTerminal = statusToUpdate === 'COMPLETED' || statusToUpdate === 'FAILED';
+
+    const setClauses = [
+        `"addressesUsed" = $1`,
+        `"txHashes" = $2`,
+        `"updatedAt" = $3`,
+    ];
+    const params: any[] = [addresses, txHashes, currentTimeUtc];
+    let paramIdx = 4;
+
+    if (isTerminal) {
+        setClauses.push(`"completedAt" = $${paramIdx}`);
+        params.push(currentTimeUtc);
+        paramIdx++;
+    }
+
+    if (statusToUpdate) {
+        setClauses.push(`"status" = $${paramIdx}`);
+        params.push(statusToUpdate);
+        paramIdx++;
+    }
+
+    params.push(dbUserId, String(clientUserId), String(invoiceId));
 
     const sql = `
         UPDATE "Transaction"
-        SET
-            "addressesUsed" = $1,
-            "txHashes" = $2,
-            "updatedAt" = $3,
-            "completedAt" = $4,
-            "status" = $5
+        SET ${setClauses.join(', ')}
         WHERE
-            "userId" = $6
-            AND "clientUserId" = $7
-            AND "invoiceId" = $8
-            -- Maybe add AND status = 'PENDING' or status = 'PROCESSING'?
-        RETURNING id; -- Return ID to check if update occurred
+            "userId" = $${paramIdx}
+            AND "clientUserId" = $${paramIdx + 1}
+            AND "invoiceId" = $${paramIdx + 2}
+        RETURNING id;
     `;
-    const params = [
-        addresses,
-        txHashes,
-        currentTimeUtc,
-        currentTimeUtc,
-        statusToUpdate,
-        dbUserId,
-        String(clientUserId),
-        String(invoiceId)
-    ];
 
     let client: PoolClient | null = null;
     try {
@@ -339,6 +348,22 @@ export async function updateTransactionSharedData(
         const sqlstate = err.code;
         fastify.log.error(`❌ ERROR: Database error (Code: ${sqlstate}) during transaction update for UID: ${clientUserId}, IID: ${invoiceId}: ${err.message || err}`, { stack: err.stack });
         throw new InternalServerError(`Database error during transaction update.`);
+    } finally {
+        client?.release();
+    }
+}
+
+export async function getWebhookConfigByUserId(fastify: FastifyInstance, dbUserId: string): Promise<{ url: string | null; secret: string | null } | null> {
+    const sql = `SELECT url, secret FROM "WebhookConfig" WHERE "userId" = $1 LIMIT 1`;
+    let client: PoolClient | null = null;
+    try {
+        client = await fastify.pg.connect();
+        const { rows } = await client.query(sql, [dbUserId]);
+        if (!rows.length) return null;
+        return { url: rows[0].url ?? null, secret: rows[0].secret ?? null };
+    } catch (err: any) {
+        fastify.log.error(`Error fetching webhook config for user ${dbUserId}: ${err.message}`);
+        return null;
     } finally {
         client?.release();
     }
